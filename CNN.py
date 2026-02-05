@@ -22,6 +22,8 @@ class CNN():
         # Setting transforms to resizing the images
         transform = transforms.Compose([
         transforms.Resize((img_size, img_size)),
+        transforms.RandomHorizontalFlip(),
+        transforms.RandomRotation(10),
         transforms.Grayscale(num_output_channels=1),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.449], std=[0.226])])
@@ -44,24 +46,57 @@ class CNN():
             generator=self.generator
         )
 
-        self.trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size,  shuffle=True, num_workers=2)
-        self.valloader = torch.utils.data.DataLoader(valset, batch_size=batch_size,  shuffle=True, num_workers=2)
-        self.testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size,  shuffle=True, num_workers=2)
+        self.trainloader = torch.utils.data.DataLoader(
+            trainset, 
+            batch_size=batch_size,  
+            shuffle=True, 
+            num_workers=4,
+            pin_memory=True
+        )
+
+        self.valloader = torch.utils.data.DataLoader(
+            valset, 
+            batch_size=batch_size,  
+            shuffle=True, 
+            num_workers=4,
+            pin_memory=True
+        )
+
+        self.testloader = torch.utils.data.DataLoader(
+            testset, 
+            batch_size=batch_size,  
+            shuffle=True, 
+            num_workers=4,
+            pin_memory=True
+        )
 
         self.classes = self.dataset.classes
 
-        # print(dataset.classes)
+        print(self.dataset.classes)
 
         self.net = Net(num_classes=len(self.dataset.classes))
 
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.net.to(self.device)
+
         self.criterion = nn.CrossEntropyLoss()
-        self.optimizer = optim.SGD(self.net.parameters(), lr=lr_rate, momentum=momentum)
+        self.optimizer = optim.Adam(self.net.parameters(), lr=lr_rate)
+
+
+        self.scheduler = torch.optim.lr_scheduler.StepLR(
+            self.optimizer, step_size=5, gamma=0.5
+        )
+
 
     def train(self):
         for epoch in range(self.epochs):
+            print(epoch)
             running_loss = 0.0
             for i, data in enumerate(self.trainloader, 0):
                 inputs, labels = data
+
+                inputs = inputs.to(self.device)
+                labels = labels.to(self.device)
 
                 self.optimizer.zero_grad()
 
@@ -76,6 +111,9 @@ class CNN():
                         (epoch + 1, i + 1, running_loss / 2000))
                     running_loss = 0.0
 
+                self.scheduler.step()
+
+
         print('Finished Training')
 
     def evaluate(self):
@@ -84,6 +122,11 @@ class CNN():
         with torch.no_grad():
             for data in self.testloader:
                 images, labels = data
+
+                images = images.to(self.device)
+                labels = labels.to(self.device)
+
+
                 outputs = self.net(images)
                 _, predicted = torch.max(outputs.data, 1)
                 total += labels.size(0)
