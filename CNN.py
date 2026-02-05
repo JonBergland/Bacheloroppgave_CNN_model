@@ -90,11 +90,10 @@ class CNN():
 
     def train(self):
         for epoch in range(self.epochs):
-            print(epoch)
-            running_loss = 0.0
-            for i, data in enumerate(self.trainloader, 0):
-                inputs, labels = data
 
+            running_loss = 0.0
+
+            for inputs, labels in self.trainloader:
                 inputs = inputs.to(self.device)
                 labels = labels.to(self.device)
 
@@ -102,19 +101,44 @@ class CNN():
 
                 outputs = self.net(inputs)
                 loss = self.criterion(outputs, labels)
+
                 loss.backward()
                 self.optimizer.step()
 
                 running_loss += loss.item()
-                if i % 2000 == 1999:
-                    print('[%d, %5d] loss: %.3f' %
-                        (epoch + 1, i + 1, running_loss / 2000))
-                    running_loss = 0.0
 
-                self.scheduler.step()
+            avg_loss = running_loss / len(self.trainloader)
+            val_acc = self.validate()
+
+            print(
+                f"Epoch [{epoch+1}/{self.epochs}] "
+                f"Loss: {avg_loss:.4f} "
+                f"Val Acc: {val_acc:.2f}%"
+            )
 
 
-        print('Finished Training')
+    def validate(self):
+        self.net.eval()  # evaluation mode
+
+        correct = 0
+        total = 0
+
+        with torch.no_grad():
+            for images, labels in self.valloader:
+                images = images.to(self.device)
+                labels = labels.to(self.device)
+
+                outputs = self.net(images)
+                _, preds = torch.max(outputs, 1)
+
+                correct += (preds == labels).sum().item()
+                total += labels.size(0)
+
+        self.net.train()  # back to training mode
+
+        accuracy = 100 * correct / total
+        return accuracy
+
 
     def evaluate(self):
         correct = 0
@@ -132,7 +156,7 @@ class CNN():
                 total += labels.size(0)
                 correct += (predicted == labels).sum().item()
 
-        print('Accuracy of the network on the 10000 test images: %d %%' % (
+        print('Test image accuracy: %d %%' % (
             100 * correct / total))
 
 
