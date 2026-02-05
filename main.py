@@ -1,3 +1,4 @@
+import os
 from CNN import CNN
 
 def main(dataset_root: str, 
@@ -22,8 +23,10 @@ def main(dataset_root: str,
 
     
 if __name__ == '__main__':
-    root = './imagenet-256/sample_classes'
-    epochs = 5
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    root = os.path.join(BASE_DIR, "dataset")
+
+    epochs = 1
     lr_rate = 0.01
     momentum = 0.9
     batch_size = 32
