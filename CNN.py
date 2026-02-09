@@ -4,6 +4,7 @@ import torch.optim as optim
 import torchvision
 import torchvision.transforms as transforms
 import torch.nn.functional as F
+import matplotlib.pyplot as plt
 
 from net import Net
 
@@ -15,7 +16,8 @@ class CNN():
             momentum: float = 0.09,
             batch_size: int = 32,
             img_size: int = 32, 
-            manual_seed: int = 42):
+            manual_seed: int = 42,
+            save_path: str | None = None):
 
         self.epochs = epochs
         
@@ -80,8 +82,7 @@ class CNN():
         self.net.to(self.device)
 
         self.criterion = nn.CrossEntropyLoss()
-        self.optimizer = optim.Adam(self.net.parameters(), lr=lr_rate)
-
+        self.optimizer = optim.Adam(self.net.parameters(), lr=lr_rate, amsgrad=True, weight_decay=0.0001)
 
         self.scheduler = torch.optim.lr_scheduler.StepLR(
             self.optimizer, step_size=5, gamma=0.5
@@ -92,6 +93,8 @@ class CNN():
         for epoch in range(self.epochs):
 
             running_loss = 0.0
+            correct_train = 0
+            total_train = 0
 
             for inputs, labels in self.trainloader:
                 inputs = inputs.to(self.device)
@@ -106,8 +109,15 @@ class CNN():
                 self.optimizer.step()
 
                 running_loss += loss.item()
+                
+                # Calculate training accuracy
+                _, preds = torch.max(outputs, 1)
+                correct_train += (preds == labels).sum().item()
+                total_train += labels.size(0)
 
+            self.scheduler.step()
             avg_loss = running_loss / len(self.trainloader)
+            train_acc = 100 * correct_train / total_train
             val_acc = self.validate()
 
             print(
@@ -115,13 +125,18 @@ class CNN():
                 f"Loss: {avg_loss:.4f} "
                 f"Val Acc: {val_acc:.2f}%"
             )
-
+        
+        # plot and save
+        self.plot_metrics()
+        self.save_model()   # save weights + metadata after training
+        self.net.eval()
 
     def validate(self):
         self.net.eval()  # evaluation mode
 
         correct = 0
         total = 0
+        running_val_loss = 0.0
 
         with torch.no_grad():
             for images, labels in self.valloader:
@@ -129,15 +144,48 @@ class CNN():
                 labels = labels.to(self.device)
 
                 outputs = self.net(images)
+                loss = self.criterion(outputs, labels)
+                running_val_loss += loss.item()
+                
                 _, preds = torch.max(outputs, 1)
 
                 correct += (preds == labels).sum().item()
                 total += labels.size(0)
 
-        self.net.train()  # back to training mode
+        self.net.train()
 
+        avg_val_loss = running_val_loss / len(self.valloader)
+        self.val_losses.append(avg_val_loss)
+        
         accuracy = 100 * correct / total
         return accuracy
+
+
+    def plot_metrics(self):
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+        
+        epochs_range = range(1, self.epochs + 1)
+        
+        # Plot Accuracy
+        ax1.plot(epochs_range, self.train_accuracies, label='Train Accuracy', marker='o')
+        ax1.plot(epochs_range, self.val_accuracies, label='Validation Accuracy', marker='o')
+        ax1.set_xlabel('Epoch')
+        ax1.set_ylabel('Accuracy (%)')
+        ax1.set_title('Training vs Validation Accuracy')
+        ax1.legend()
+        ax1.grid(True)
+        
+        # Plot Loss
+        ax2.plot(epochs_range, self.train_losses, label='Training Loss', marker='o')
+        ax2.plot(epochs_range, self.val_losses, label='Validation Loss', marker='o')
+        ax2.set_xlabel('Epoch')
+        ax2.set_ylabel('Loss')
+        ax2.set_title('Training vs Validation Loss')
+        ax2.legend()
+        ax2.grid(True)
+        
+        plt.tight_layout()
+        plt.show()
 
 
     def evaluate(self):
