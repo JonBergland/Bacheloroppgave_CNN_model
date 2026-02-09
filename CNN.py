@@ -1,3 +1,4 @@
+import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -87,6 +88,18 @@ class CNN():
         self.scheduler = torch.optim.lr_scheduler.StepLR(
             self.optimizer, step_size=5, gamma=0.5
         )
+        
+        # Model save path
+        if save_path is None:
+            self.save_path = os.path.join(os.getcwd(), "resnet9.pth")
+        else:
+            self.save_path = save_path
+        
+        # Initialize tracking lists
+        self.train_losses = []
+        self.val_losses = []
+        self.train_accuracies = []
+        self.val_accuracies = []
 
 
     def train(self):
@@ -120,19 +133,25 @@ class CNN():
             train_acc = 100 * correct_train / total_train
             val_acc = self.validate()
 
+            # Store metrics
+            self.train_losses.append(avg_loss)
+            self.train_accuracies.append(train_acc)
+            self.val_accuracies.append(val_acc)
+
             print(
                 f"Epoch [{epoch+1}/{self.epochs}] "
                 f"Loss: {avg_loss:.4f} "
+                f"Train Acc: {train_acc:.2f}% "
                 f"Val Acc: {val_acc:.2f}%"
             )
         
         # plot and save
         self.plot_metrics()
         self.save_model()   # save weights + metadata after training
-        self.net.eval()
+
 
     def validate(self):
-        self.net.eval()  # evaluation mode
+        self.net.eval()
 
         correct = 0
         total = 0
@@ -206,5 +225,31 @@ class CNN():
 
         print('Test image accuracy: %d %%' % (
             100 * correct / total))
+        
+        torch.cuda.empty_cache()
 
+    def save_model(self, path: str | None = None, save_optimizer: bool = False):
+        """Save model state (and optional optimizer state) plus class list."""
+        path = path or self.save_path
+        data = {
+            "model_state_dict": self.net.state_dict(),
+            "classes": self.classes
+        }
+        if save_optimizer:
+            data["optimizer_state_dict"] = self.optimizer.state_dict()
+            data["scheduler_state_dict"] = self.scheduler.state_dict()
+        torch.save(data, path)
+        print(f"Saved model to: {path}")
+
+    def load_model(self, path: str, load_optimizer: bool = False):
+        """Load model (and optional optimizer/scheduler) state."""
+        checkpoint = torch.load(path, map_location=self.device)
+        self.net.load_state_dict(checkpoint["model_state_dict"])
+        self.classes = checkpoint.get("classes", self.classes)
+        if load_optimizer and "optimizer_state_dict" in checkpoint:
+            self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+            if "scheduler_state_dict" in checkpoint:
+                self.scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
+        self.net.to(self.device)
+        print(f"Loaded model from: {path}")
 
