@@ -20,13 +20,15 @@ def main(dataset_root: str,
     cnn.train()
     cnn.evaluate()
 
+    cnn.plot_metrics()
+
 
     
 if __name__ == '__main__':
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     root = os.path.join(BASE_DIR, "dataset")
 
-    epochs = 1
+    epochs = 2
     lr_rate = 0.001
     momentum = 0.9
     batch_size = 32
