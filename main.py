@@ -27,7 +27,7 @@ if __name__ == '__main__':
     root = os.path.join(BASE_DIR, "dataset")
 
     epochs = 1
-    lr_rate = 0.01
+    lr_rate = 0.001
     momentum = 0.9
     batch_size = 32
     img_size = 32

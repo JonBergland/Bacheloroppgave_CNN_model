@@ -74,7 +74,7 @@ class CNN():
 
         print(self.dataset.classes)
 
-        self.net = Net(num_classes=len(self.dataset.classes))
+        self.net = Net(num_classes=len(self.dataset.classes), img_size=img_size)
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.net.to(self.device)

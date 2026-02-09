@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class Net(nn.Module):
-    def __init__(self, num_classes: int):
+    def __init__(self, num_classes: int, img_size: int):
         super(Net, self).__init__()
 
         # 1 layer
@@ -25,12 +25,12 @@ class Net(nn.Module):
         self.pool = nn.MaxPool2d(2, 2)
         self.dropout = nn.Dropout(0.5)
 
-        self._init_fc(num_classes=num_classes)
+        self._init_fc(num_classes=num_classes, img_size=img_size)
 
 
-    def _init_fc(self, num_classes):
+    def _init_fc(self, num_classes, img_size):
         with torch.no_grad():
-            x = torch.zeros(1, 1, 32, 32)
+            x = torch.zeros(1, 1, img_size, img_size)
             x = self.pool(F.relu(self.bn1(self.conv1(x))))
             x = self.pool(F.relu(self.bn2(self.conv2(x))))
             x = self.pool(F.relu(self.bn3(self.conv3(x))))
@@ -50,6 +50,5 @@ class Net(nn.Module):
         x = x.view(x.size(0), -1)
         
         x = self.dropout(F.relu(self.fc1(x)))
-        x = F.relu(self.fc1(x))
         x = self.fc2(x)
         return x
