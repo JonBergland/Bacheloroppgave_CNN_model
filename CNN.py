@@ -22,7 +22,6 @@ class CNN():
 
         self.epochs = epochs
         
-        # Setting transforms to resizing the images
         transform = transforms.Compose([
         transforms.Resize((img_size, img_size)),
         transforms.RandomHorizontalFlip(),
@@ -93,7 +92,25 @@ class CNN():
         if save_path is None:
             self.save_path = os.path.join(os.getcwd(), "resnet9.pth")
         else:
-            self.save_path = save_path
+            print("Save path is not null")
+            # If user passed a directory (or a path ending with separator), use default filename inside it
+            if os.path.isdir(save_path) or str(save_path).endswith(os.sep):
+                os.makedirs(save_path, exist_ok=True)
+                self.save_path = os.path.join(save_path, "resnet9.pth")
+                
+            else:
+                parent = os.path.dirname(save_path)
+                if parent:
+                    os.makedirs(parent, exist_ok=True)
+                self.save_path = save_path
+
+        # Auto-load existing checkpoint if present
+        if os.path.exists(self.save_path):
+            print("Save path exists from before")
+            try:
+                self.load_model(self.save_path, load_optimizer=False)
+            except Exception as e:
+                print(f"Warning: failed to load model from {self.save_path}: {e}")
         
         # Initialize tracking lists
         self.train_losses = []
@@ -145,9 +162,6 @@ class CNN():
                 f"Val Acc: {val_acc:.2f}%"
             )
         
-        # plot and save
-        self.plot_metrics()
-        self.save_model()   # save weights + metadata after training
 
 
     def validate(self):
@@ -205,6 +219,9 @@ class CNN():
         
         plt.tight_layout()
         plt.show()
+    
+    def clear_model(self):
+        torch.cuda.empty_cache()
 
 
     def evaluate(self):
@@ -226,7 +243,6 @@ class CNN():
         print('Test image accuracy: %d %%' % (
             100 * correct / total))
         
-        torch.cuda.empty_cache()
 
     def save_model(self, path: str | None = None, save_optimizer: bool = False):
         """Save model state (and optional optimizer state) plus class list."""
