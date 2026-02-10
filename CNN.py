@@ -245,27 +245,34 @@ class CNN():
         
 
     def save_model(self, path: str | None = None, save_optimizer: bool = False):
-        """Save model state (and optional optimizer state) plus class list."""
+        """Save model state (and optional optimizer state) plus class list and training metrics."""
         path = path or self.save_path
         data = {
             "model_state_dict": self.net.state_dict(),
-            "classes": self.classes
+            "classes": self.classes,
+            "train_losses": self.train_losses,
+            "val_losses": self.val_losses,
+            "train_accuracies": self.train_accuracies,
+            "val_accuracies": self.val_accuracies
         }
         if save_optimizer:
             data["optimizer_state_dict"] = self.optimizer.state_dict()
             data["scheduler_state_dict"] = self.scheduler.state_dict()
         torch.save(data, path)
-        print(f"Saved model to: {path}")
+        print(f"Saved model and metrics to: {path}")
 
     def load_model(self, path: str, load_optimizer: bool = False):
-        """Load model (and optional optimizer/scheduler) state."""
+        """Load model (and optional optimizer/scheduler) state plus training metrics."""
         checkpoint = torch.load(path, map_location=self.device)
         self.net.load_state_dict(checkpoint["model_state_dict"])
         self.classes = checkpoint.get("classes", self.classes)
+        self.train_losses = checkpoint.get("train_losses", [])
+        self.val_losses = checkpoint.get("val_losses", [])
+        self.train_accuracies = checkpoint.get("train_accuracies", [])
+        self.val_accuracies = checkpoint.get("val_accuracies", [])
         if load_optimizer and "optimizer_state_dict" in checkpoint:
             self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
-            if "scheduler_state_dict" in checkpoint:
-                self.scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
+            self.scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
         self.net.to(self.device)
         print(f"Loaded model from: {path}")
 
