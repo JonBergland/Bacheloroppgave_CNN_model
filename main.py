@@ -7,7 +7,8 @@ def main(dataset_root: str,
          momentum: float = 0.09,
          batch_size: int = 32,
          img_size: int = 32, 
-         manual_seed: int = 42):
+         manual_seed: int = 42,
+         save_path: str | None = None):
 
     cnn = CNN(dataset_root=dataset_root, 
     epochs = epochs,
@@ -15,10 +16,14 @@ def main(dataset_root: str,
     momentum = momentum,
     batch_size = batch_size,
     img_size = img_size,
-    manual_seed = manual_seed)
+    manual_seed = manual_seed,
+    save_path=save_path)
 
     cnn.train()
     cnn.evaluate()
+
+    cnn.save_model()
+    cnn.clear_model()
 
     cnn.plot_metrics()
 
@@ -27,6 +32,7 @@ def main(dataset_root: str,
 if __name__ == '__main__':
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     root = os.path.join(BASE_DIR, "dataset")
+    save_path = os.path.join(BASE_DIR, "saved_models")
 
     epochs = 2
     lr_rate = 0.001
@@ -34,6 +40,7 @@ if __name__ == '__main__':
     batch_size = 32
     img_size = 32
     manual_seed = 42
+    
 
 
     main(dataset_root=root,
@@ -42,5 +49,6 @@ if __name__ == '__main__':
          momentum=momentum,
          batch_size=batch_size,
          img_size=img_size,
-         manual_seed=manual_seed)
+         manual_seed=manual_seed,
+         save_path=save_path)
 
