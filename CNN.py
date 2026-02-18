@@ -6,8 +6,9 @@ import torchvision
 import torchvision.transforms as transforms
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
+from torch.cuda.amp import GradScaler, autocast
 
-from net import Net
+from resnet18 import ResNet18
 
 class CNN():
     def __init__(self, 
@@ -23,12 +24,13 @@ class CNN():
         self.epochs = epochs
         
         transform = transforms.Compose([
-        transforms.Resize((img_size, img_size)),
-        transforms.RandomHorizontalFlip(),
-        transforms.RandomRotation(10),
-        transforms.Grayscale(num_output_channels=1),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.449], std=[0.226])])
+            transforms.Resize((img_size, img_size)),
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomRotation(10),
+            transforms.Grayscale(num_output_channels=1),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.449], std=[0.226])
+        ])
 
         self.batch_size = batch_size
 
@@ -53,7 +55,8 @@ class CNN():
             batch_size=batch_size,  
             shuffle=True, 
             num_workers=4,
-            pin_memory=True
+            pin_memory=True,
+            persistent_workers=True
         )
 
         self.valloader = torch.utils.data.DataLoader(
@@ -61,7 +64,8 @@ class CNN():
             batch_size=batch_size,  
             shuffle=True, 
             num_workers=4,
-            pin_memory=True
+            pin_memory=True,
+            persistent_workers=True
         )
 
         self.testloader = torch.utils.data.DataLoader(
@@ -69,14 +73,17 @@ class CNN():
             batch_size=batch_size,  
             shuffle=True, 
             num_workers=4,
-            pin_memory=True
+            pin_memory=True,
+            persistent_workers=True
         )
 
         self.classes = self.dataset.classes
 
         print(self.dataset.classes)
 
-        self.net = Net(num_classes=len(self.dataset.classes), img_size=img_size)
+        # self.net = Net(num_classes=len(self.dataset.classes), img_size=img_size)
+
+        self.net = ResNet18(num_classes=len(self.dataset.classes), in_channels=1)
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.net.to(self.device)
@@ -87,6 +94,12 @@ class CNN():
         self.scheduler = torch.optim.lr_scheduler.StepLR(
             self.optimizer, step_size=5, gamma=0.5
         )
+
+        # Initialize tracking lists
+        self.train_losses = []
+        self.val_losses = []
+        self.train_accuracies = []
+        self.val_accuracies = []
         
         # Model save path
         if save_path is None:
@@ -112,16 +125,12 @@ class CNN():
             except Exception as e:
                 print(f"Warning: failed to load model from {self.save_path}: {e}")
         
-        # Initialize tracking lists
-        self.train_losses = []
-        self.val_losses = []
-        self.train_accuracies = []
-        self.val_accuracies = []
 
 
     def train(self):
+        scaler = GradScaler('cuda')  # Initialize the gradient scaler for mixed precision
+        best_val_acc = 0.0
         for epoch in range(self.epochs):
-
             running_loss = 0.0
             correct_train = 0
             total_train = 0
@@ -132,15 +141,15 @@ class CNN():
 
                 self.optimizer.zero_grad()
 
-                outputs = self.net(inputs)
-                loss = self.criterion(outputs, labels)
+                with autocast('cuda'):  # Enable mixed precision
+                    outputs = self.net(inputs)
+                    loss = self.criterion(outputs, labels)
 
-                loss.backward()
-                self.optimizer.step()
+                scaler.scale(loss).backward()  # Scale gradients
+                scaler.step(self.optimizer)   # Step optimizer
+                scaler.update()               # Update scaler
 
                 running_loss += loss.item()
-                
-                # Calculate training accuracy
                 _, preds = torch.max(outputs, 1)
                 correct_train += (preds == labels).sum().item()
                 total_train += labels.size(0)
@@ -149,6 +158,11 @@ class CNN():
             avg_loss = running_loss / len(self.trainloader)
             train_acc = 100 * correct_train / total_train
             val_acc = self.validate()
+
+            if val_acc > best_val_acc:
+                best_val_acc = val_acc
+                self.save_model()
+                print(f"New best model saved with Validation Accuracy: {val_acc:.2f}%")
 
             # Store metrics
             self.train_losses.append(avg_loss)
