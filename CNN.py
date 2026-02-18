@@ -103,13 +103,13 @@ class CNN():
         
         # Model save path
         if save_path is None:
-            self.save_path = os.path.join(os.getcwd(), "resnet9.pth")
+            self.save_path = os.path.join(os.getcwd(), "resnet18.pth")
         else:
             print("Save path is not null")
             # If user passed a directory (or a path ending with separator), use default filename inside it
             if os.path.isdir(save_path) or str(save_path).endswith(os.sep):
                 os.makedirs(save_path, exist_ok=True)
-                self.save_path = os.path.join(save_path, "resnet9.pth")
+                self.save_path = os.path.join(save_path, "resnet18.pth")
                 
             else:
                 parent = os.path.dirname(save_path)
