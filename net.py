@@ -30,12 +30,28 @@ class Net(nn.Module):
         super().__init__()
         # feature extractor
         self.conv1 = conv_block(in_channels, 64)
-        self.conv2 = conv_block(64, 128, pool=True)
-        self.res1 = nn.Sequential(conv_block(128, 128), conv_block(128, 128))
+        self.bn1 = nn.BatchNorm2d(64)
+        self.relu = nn.ReLU(inplace=True)
 
-        self.conv3 = conv_block(128, 256, pool=True)
-        self.conv4 = conv_block(256, 512, pool=True)
-        self.res2 = nn.Sequential(conv_block(512, 512), conv_block(512, 512))
+        self.res1 = nn.Sequential(conv_block(64, 64), conv_block(64, 64))
+
+        self.conv2 = conv_block(64, 128)
+        self.bn2 = nn.BatchNorm2d(128)
+        self.relu = nn.ReLU(inplace=True)
+
+        self.res2 = nn.Sequential(conv_block(128, 128), conv_block(128, 128))
+
+        self.conv3 = conv_block(128, 256)
+        self.bn3 = nn.BatchNorm2d(256)
+        self.relu = nn.ReLU(inplace=True)
+
+        self.res3 = nn.Sequential(conv_block(256, 256), conv_block(256, 256))
+
+        self.conv4 = conv_block(256, 512)
+        self.bn4 = nn.BatchNorm2d(512)
+        self.relu = nn.ReLU(inplace=True)
+
+        self.res4 = nn.Sequential(conv_block(512, 512), conv_block(512, 512))
 
         self.classifier = nn.Sequential(
             nn.AdaptiveAvgPool2d((1, 1)),
@@ -46,10 +62,28 @@ class Net(nn.Module):
 
     def forward(self, x):
         x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.relu(x)
+
+        x = x + self.res1(x)  
+
         x = self.conv2(x)
-        x = x + self.res1(x)  # residual connection
+        x = self.bn2(x)
+        x = self.relu(x)
+
+        x = x + self.res2(x)  
+
         x = self.conv3(x)
+        x = self.bn3(x)
+        x = self.relu(x)
+
+        x = x + self.res3(x)  
+
         x = self.conv4(x)
-        x = x + self.res2(x)  # residual connection
+        x = self.bn4(x)
+        x = self.relu(x)
+
+        x = x + self.res4(x)  
+
         x = self.classifier(x)
         return x
