@@ -6,7 +6,7 @@ import torchvision
 import torchvision.transforms as transforms
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
-from torch.cuda.amp import GradScaler, autocast
+from torch.amp import GradScaler, autocast
 
 from resnet18 import ResNet18
 
@@ -54,7 +54,7 @@ class CNN():
             trainset, 
             batch_size=batch_size,  
             shuffle=True, 
-            num_workers=4,
+            num_workers=1,
             pin_memory=True,
             persistent_workers=True
         )
@@ -63,7 +63,7 @@ class CNN():
             valset, 
             batch_size=batch_size,  
             shuffle=True, 
-            num_workers=4,
+            num_workers=1,
             pin_memory=True,
             persistent_workers=True
         )
@@ -72,7 +72,7 @@ class CNN():
             testset, 
             batch_size=batch_size,  
             shuffle=True, 
-            num_workers=4,
+            num_workers=1,
             pin_memory=True,
             persistent_workers=True
         )
@@ -85,7 +85,8 @@ class CNN():
 
         self.net = ResNet18(num_classes=len(self.dataset.classes), in_channels=1)
 
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device_type = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = torch.device(self.device_type)
         self.net.to(self.device)
 
         self.criterion = nn.CrossEntropyLoss()
@@ -128,7 +129,8 @@ class CNN():
 
 
     def train(self):
-        scaler = GradScaler('cuda')  # Initialize the gradient scaler for mixed precision
+        use_amp = (self.device_type == "cuda")
+        scaler = GradScaler() if use_amp else None
         best_val_acc = 0.0
         for epoch in range(self.epochs):
             running_loss = 0.0
@@ -141,13 +143,18 @@ class CNN():
 
                 self.optimizer.zero_grad()
 
-                with autocast('cuda'):  # Enable mixed precision
+                if use_amp:
+                    with autocast(device_type=self.device_type):
+                        outputs = self.net(inputs)
+                        loss = self.criterion(outputs, labels)
+                    scaler.scale(loss).backward()
+                    scaler.step(self.optimizer)
+                    scaler.update()
+                else:
                     outputs = self.net(inputs)
                     loss = self.criterion(outputs, labels)
-
-                scaler.scale(loss).backward()  # Scale gradients
-                scaler.step(self.optimizer)   # Step optimizer
-                scaler.update()               # Update scaler
+                    loss.backward()
+                    self.optimizer.step()
 
                 running_loss += loss.item()
                 _, preds = torch.max(outputs, 1)
