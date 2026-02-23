@@ -8,7 +8,7 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 from torch.amp import GradScaler, autocast
 
-from resnet18 import ResNet18
+from cnn_test.resnet import ResNet18, ResNet9
 
 class CNN():
     def __init__(self, 
@@ -83,7 +83,8 @@ class CNN():
 
         # self.net = Net(num_classes=len(self.dataset.classes), img_size=img_size)
 
-        self.net = ResNet18(num_classes=len(self.dataset.classes), in_channels=1)
+        # self.net = ResNet18(num_classes=len(self.dataset.classes), in_channels=1)
+        self.net = ResNet9(num_classes=len(self.dataset.classes), in_channels=1)
 
         self.device_type = "cuda" if torch.cuda.is_available() else "cpu"
         self.device = torch.device(self.device_type)
@@ -104,13 +105,13 @@ class CNN():
         
         # Model save path
         if save_path is None:
-            self.save_path = os.path.join(os.getcwd(), "resnet18.pth")
+            self.save_path = os.path.join(os.getcwd(), "resnet9.pth")
         else:
             print("Save path is not null")
             # If user passed a directory (or a path ending with separator), use default filename inside it
             if os.path.isdir(save_path) or str(save_path).endswith(os.sep):
                 os.makedirs(save_path, exist_ok=True)
-                self.save_path = os.path.join(save_path, "resnet18.pth")
+                self.save_path = os.path.join(save_path, "resnet9.pth")
                 
             else:
                 parent = os.path.dirname(save_path)
@@ -218,7 +219,7 @@ class CNN():
     def plot_metrics(self):
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
         
-        epochs_range = range(1, self.epochs + 1)
+        epochs_range = range(1, len(self.train_accuracies) + self.epochs + 1)
         
         # Plot Accuracy
         ax1.plot(epochs_range, self.train_accuracies, label='Train Accuracy', marker='o')
