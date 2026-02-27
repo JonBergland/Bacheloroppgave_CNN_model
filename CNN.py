@@ -91,8 +91,8 @@ class CNN():
         self.device = torch.device(self.device_type)
         self.net.to(self.device)
 
-        self.criterion = nn.CrossEntropyLoss()
-        self.optimizer = optim.Adam(self.net.parameters(), lr=lr_rate, amsgrad=True, weight_decay=0.0001)
+        self.criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
+        self.optimizer = optim.Adam(self.net.parameters(), lr=lr_rate, amsgrad=True, weight_decay=0.01)
 
         self.scheduler = torch.optim.lr_scheduler.StepLR(
             self.optimizer, step_size=5, gamma=0.5
