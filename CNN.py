@@ -19,7 +19,8 @@ class CNN():
             batch_size: int = 32,
             img_size: int = 32, 
             manual_seed: int = 42,
-            save_path: str | None = None):
+            save_path: str | None = None,
+            only_see_metrics: bool = False):
 
         self.epochs = epochs
         
@@ -126,7 +127,10 @@ class CNN():
                 self.load_model(self.save_path, load_optimizer=False)
             except Exception as e:
                 print(f"Warning: failed to load model from {self.save_path}: {e}")
-        
+
+        if only_see_metrics:
+            self.plot_metrics()
+            exit()
 
 
     def train(self):
@@ -219,7 +223,7 @@ class CNN():
     def plot_metrics(self):
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
         
-        epochs_range = range(1, len(self.train_accuracies) + self.epochs + 1)
+        epochs_range = range(1, len(self.train_accuracies) + 1)
         
         # Plot Accuracy
         ax1.plot(epochs_range, self.train_accuracies, label='Train Accuracy', marker='o')

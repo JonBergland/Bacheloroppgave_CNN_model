@@ -8,7 +8,8 @@ def main(dataset_root: str,
          batch_size: int = 32,
          img_size: int = 32, 
          manual_seed: int = 42,
-         save_path: str | None = None):
+         save_path: str | None = None,
+         only_see_metrics: bool = False):
 
     cnn = CNN(dataset_root=dataset_root, 
     epochs = epochs,
@@ -17,7 +18,8 @@ def main(dataset_root: str,
     batch_size = batch_size,
     img_size = img_size,
     manual_seed = manual_seed,
-    save_path=save_path)
+    save_path=save_path,
+    only_see_metrics=only_see_metrics)
 
     cnn.train()
     cnn.evaluate()
@@ -40,6 +42,7 @@ if __name__ == '__main__':
     batch_size = 32
     img_size = 32
     manual_seed = 42
+    only_see_metrics = False
     
 
 
@@ -50,5 +53,6 @@ if __name__ == '__main__':
          batch_size=batch_size,
          img_size=img_size,
          manual_seed=manual_seed,
-         save_path=save_path)
+         save_path=save_path,
+         only_see_metrics=only_see_metrics)
 
