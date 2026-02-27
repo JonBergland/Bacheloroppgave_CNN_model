@@ -8,7 +8,7 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 from torch.amp import GradScaler, autocast
 
-from cnn_test.resnet import ResNet18, ResNet9
+from resnet import ResNet18, ResNet9
 
 class CNN():
     def __init__(self, 
