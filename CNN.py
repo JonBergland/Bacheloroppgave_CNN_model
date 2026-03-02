@@ -124,7 +124,7 @@ class CNN():
         if os.path.exists(self.save_path):
             print("Save path exists from before")
             try:
-                self.load_model(self.save_path, load_optimizer=False)
+                self.load_model(self.save_path, load_optimizer=True)
             except Exception as e:
                 print(f"Warning: failed to load model from {self.save_path}: {e}")
 
@@ -136,8 +136,8 @@ class CNN():
     def train(self):
         use_amp = (self.device_type == "cuda")
         scaler = GradScaler() if use_amp else None
-        best_val_acc = 0.0
-        for epoch in range(self.epochs):
+        best_val_acc = max(self.val_accuracies) if self.val_accuracies else 0.0
+        for epoch in range(self.start_epoch, self.start_epoch + self.epochs):
             running_loss = 0.0
             correct_train = 0
             total_train = 0
@@ -173,7 +173,7 @@ class CNN():
 
             if val_acc > best_val_acc:
                 best_val_acc = val_acc
-                self.save_model()
+                self.save_model(save_optimizer=True)
                 print(f"New best model saved with Validation Accuracy: {val_acc:.2f}%")
 
             # Store metrics
@@ -279,7 +279,8 @@ class CNN():
             "train_losses": self.train_losses,
             "val_losses": self.val_losses,
             "train_accuracies": self.train_accuracies,
-            "val_accuracies": self.val_accuracies
+            "val_accuracies": self.val_accuracies,
+            "epoch": len(self.train_accuracies)
         }
         if save_optimizer:
             data["optimizer_state_dict"] = self.optimizer.state_dict()
@@ -296,9 +297,10 @@ class CNN():
         self.val_losses = checkpoint.get("val_losses", [])
         self.train_accuracies = checkpoint.get("train_accuracies", [])
         self.val_accuracies = checkpoint.get("val_accuracies", [])
+        self.start_epoch = checkpoint.get("epoch", 0)
         if load_optimizer and "optimizer_state_dict" in checkpoint:
             self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
             self.scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
         self.net.to(self.device)
-        print(f"Loaded model from: {path}")
+        print(f"Loaded model from: {path}, resuming from epoch {self.start_epoch}")
 
