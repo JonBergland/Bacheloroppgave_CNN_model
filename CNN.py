@@ -82,17 +82,14 @@ class CNN():
 
         print(self.dataset.classes)
 
-        # self.net = Net(num_classes=len(self.dataset.classes), img_size=img_size)
-
-        # self.net = ResNet18(num_classes=len(self.dataset.classes), in_channels=1)
         self.net = ResNet9(num_classes=len(self.dataset.classes), in_channels=1)
 
         self.device_type = "cuda" if torch.cuda.is_available() else "cpu"
         self.device = torch.device(self.device_type)
         self.net.to(self.device)
 
-        self.criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
-        self.optimizer = optim.Adam(self.net.parameters(), lr=lr_rate, amsgrad=True, weight_decay=0.01)
+        self.criterion = nn.CrossEntropyLoss(label_smoothing=0.05)
+        self.optimizer = optim.Adam(self.net.parameters(), lr=lr_rate, amsgrad=True, weight_decay=1e-3)
 
         self.scheduler = torch.optim.lr_scheduler.StepLR(
             self.optimizer, step_size=5, gamma=0.5
@@ -183,7 +180,7 @@ class CNN():
             self.val_accuracies.append(val_acc)
 
             print(
-                f"Epoch [{epoch+1}/{self.epochs}] "
+                f"Epoch [{epoch+1}/{self.start_epoch + epoch}] "
                 f"Loss: {avg_loss:.4f} "
                 f"Train Acc: {train_acc:.2f}% "
                 f"Val Acc: {val_acc:.2f}%"
