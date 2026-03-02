@@ -47,7 +47,7 @@ class ResNet18(nn.Module):
         self.layer4 = self._make_layer(BasicBlock, 512, 2, stride=2)
         
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.dropout = nn.Dropout(0.5)
+        self.dropout = nn.Dropout(0.6)
         self.fc = nn.Linear(512, num_classes)
 
     def _make_layer(self, block, out_channels, num_blocks, stride):
@@ -88,7 +88,7 @@ class ResNet9(nn.Module):
         self.layer4 = self._make_layer(BasicBlock, 512, 1, stride=2)
         
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.dropout = nn.Dropout(0.5)
+        self.dropout = nn.Dropout(0.6)
         self.fc = nn.Linear(512, num_classes)
 
     def _make_layer(self, block, out_channels, num_blocks, stride):
