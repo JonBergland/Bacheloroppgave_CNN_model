@@ -103,6 +103,7 @@ class CNN():
         self.val_losses = []
         self.train_accuracies = []
         self.val_accuracies = []
+        self.start_epoch = 0
         
         # Model save path
         if save_path is None:
