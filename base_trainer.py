@@ -1,9 +1,29 @@
 import os
+from typing import Iterator
+
+import numpy as np
 import torch
 import torch.nn as nn
 import torchvision
-from torch.utils.data import DataLoader
+from sklearn.model_selection import KFold, StratifiedKFold
+from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
+
+
+class TransformSubset(Dataset):
+    def __init__(self, base_dataset: Dataset, indices: list[int], transform=None):
+        self.base_dataset = base_dataset
+        self.indices = list(indices)
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.indices)
+
+    def __getitem__(self, idx):
+        image, target = self.base_dataset[self.indices[idx]]
+        if self.transform is not None:
+            image = self.transform(image)
+        return image, target
 
 class BaseTrainer:
     def __init__(self, 
@@ -15,69 +35,49 @@ class BaseTrainer:
                  img_size: int = 64, 
                  manual_seed: int = 42,
                  save_path: str | None = None,
-                 output_channels: int = 1):
+                 output_channels: int = 1,
+                 use_kfold: bool = False,
+                 n_splits: int = 5,
+                 holdout_test_ratio: float = 0.15,
+                 stratified_kfold: bool = True,
+                 use_augmentation: bool = False,
+                 num_workers: int = 1):
 
         self.epochs = epochs
         self.batch_size = batch_size
+        self.img_size = img_size
+        self.manual_seed = manual_seed
+        self.output_channels = output_channels
+        self.use_kfold = use_kfold
+        self.n_splits = n_splits
+        self.holdout_test_ratio = holdout_test_ratio
+        self.stratified_kfold = stratified_kfold
+        self.use_augmentation = use_augmentation
+        self.num_workers = num_workers
+
         self.device_type = "cuda" if torch.cuda.is_available() else "cpu"
         self.device = torch.device(self.device_type)
 
-        transform = transforms.Compose([
-            transforms.Resize((img_size, img_size)),
-            # transforms.RandomHorizontalFlip(), # Data augmentations
-            # transforms.RandomRotation(10),     # Data augmentation
-            # Scale
-            # Flytting
-            transforms.Grayscale(num_output_channels=output_channels),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.449], std=[0.226])
-        ])
-
         self.generator = torch.Generator().manual_seed(manual_seed)
 
-        self.dataset = torchvision.datasets.ImageFolder(root=dataset_root, transform=transform)
+        self.base_dataset = torchvision.datasets.ImageFolder(root=dataset_root, transform=None)
+        self.dataset = self.base_dataset
+        self.classes = self.base_dataset.classes
+        self.targets = np.array(self.base_dataset.targets)
 
-        n = len(self.dataset)
-        train_size = int(0.7 * n)
-        val_size = int(0.15 * n)
-        test_size = n - train_size - val_size
+        self.train_transform = self.make_train_transform(use_augmentation=use_augmentation)
+        self.eval_transform = self.make_eval_transform()
 
-        trainset, valset, testset = torch.utils.data.random_split(
-            self.dataset,
-            [train_size, val_size, test_size],
-            generator=self.generator
-        )
+        self.trainloader: DataLoader | None = None
+        self.valloader: DataLoader | None = None
+        self.testloader: DataLoader | None = None
 
-        use_pin_memory = self.device_type == "cuda"
-
-        self.trainloader = DataLoader(
-            trainset, 
-            batch_size=batch_size,  
-            shuffle=True, 
-            num_workers=1,
-            pin_memory=use_pin_memory,
-            persistent_workers=True
-        )
-
-        self.valloader = DataLoader(
-            valset, 
-            batch_size=batch_size,  
-            shuffle=True, 
-            num_workers=1,
-            pin_memory=use_pin_memory,
-            persistent_workers=True
-        )
-
-        self.testloader = DataLoader(
-            testset, 
-            batch_size=batch_size,  
-            shuffle=True, 
-            num_workers=1,
-            pin_memory=use_pin_memory,
-            persistent_workers=True
-        )
-
-        self.classes = self.dataset.classes
+        self.train_indices: list[int] = []
+        self.val_indices: list[int] = []
+        self.test_indices: list[int] = []
+        self.trainval_indices: list[int] = []
+        self.fold_splits: list[tuple[list[int], list[int]]] = []
+        self.current_fold = 0
 
         self.train_losses = []
         self.val_losses = []
@@ -96,6 +96,132 @@ class BaseTrainer:
                 if parent:
                     os.makedirs(parent, exist_ok=True)
                 self.save_path = save_path
+
+        self._initialize_data_splits()
+
+    def _initialize_data_splits(self):
+        if self.use_kfold:
+            self._initialize_holdout_and_folds()
+        else:
+            self._initialize_fixed_split()
+
+    def make_train_transform(self, use_augmentation: bool = False):
+        ops = [transforms.Resize((self.img_size, self.img_size))]
+        if use_augmentation:
+            ops.extend([
+                transforms.RandomHorizontalFlip(),
+                transforms.RandomRotation(10),
+                # Scale
+                # Flytting
+            ])
+        ops.extend([
+            transforms.Grayscale(num_output_channels=self.output_channels),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.449], std=[0.226]),
+        ])
+        return transforms.Compose(ops)
+
+    def make_eval_transform(self):
+        return transforms.Compose([
+            transforms.Resize((self.img_size, self.img_size)),
+            transforms.Grayscale(num_output_channels=self.output_channels),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.449], std=[0.226]),
+        ])
+
+    def _initialize_fixed_split(self):
+        n = len(self.base_dataset)
+        indices = torch.randperm(n, generator=self.generator).tolist()
+
+        train_size = int(0.7 * n)
+        val_size = int(0.15 * n)
+
+        self.train_indices = indices[:train_size]
+        self.val_indices = indices[train_size:train_size + val_size]
+        self.test_indices = indices[train_size + val_size:]
+
+        self.trainloader = self._build_loader(self.train_indices, self.train_transform, shuffle=True)
+        self.valloader = self._build_loader(self.val_indices, self.eval_transform, shuffle=False)
+        self.testloader = self._build_loader(self.test_indices, self.eval_transform, shuffle=False)
+
+    def _initialize_holdout_and_folds(self):
+        n = len(self.base_dataset)
+        indices = np.arange(n)
+
+        rng = np.random.default_rng(self.manual_seed)
+        rng.shuffle(indices)
+
+        test_size = int(self.holdout_test_ratio * n)
+        test_size = max(1, min(test_size, n - 1))
+
+        self.test_indices = indices[:test_size].tolist()
+        self.trainval_indices = indices[test_size:].tolist()
+
+        if len(self.trainval_indices) < self.n_splits:
+            raise ValueError(
+                f"n_splits={self.n_splits} is too large for trainval size={len(self.trainval_indices)}"
+            )
+
+        trainval_array = np.array(self.trainval_indices)
+        trainval_targets = self.targets[trainval_array]
+
+        if self.stratified_kfold:
+            splitter = StratifiedKFold(
+                n_splits=self.n_splits,
+                shuffle=True,
+                random_state=self.manual_seed,
+            )
+            fold_iter = splitter.split(trainval_array, trainval_targets)
+        else:
+            splitter = KFold(
+                n_splits=self.n_splits,
+                shuffle=True,
+                random_state=self.manual_seed,
+            )
+            fold_iter = splitter.split(trainval_array)
+
+        self.fold_splits = []
+        for train_rel, val_rel in fold_iter:
+            fold_train = trainval_array[train_rel].tolist()
+            fold_val = trainval_array[val_rel].tolist()
+            self.fold_splits.append((fold_train, fold_val))
+
+        self.set_fold(0)
+        self.testloader = self._build_loader(self.test_indices, self.eval_transform, shuffle=False)
+
+    def _build_loader(self, indices: list[int], transform, shuffle: bool):
+        dataset = TransformSubset(self.base_dataset, indices=indices, transform=transform)
+        return DataLoader(
+            dataset,
+            batch_size=self.batch_size,
+            shuffle=shuffle,
+            num_workers=self.num_workers,
+            pin_memory=self.device_type == "cuda",
+            persistent_workers=self.num_workers > 0,
+        )
+
+    def set_fold(self, fold_index: int):
+        if not self.fold_splits:
+            raise RuntimeError("No fold splits are available. Set use_kfold=True to use folds.")
+        if fold_index < 0 or fold_index >= len(self.fold_splits):
+            raise IndexError(f"fold_index must be in [0, {len(self.fold_splits) - 1}]")
+
+        self.current_fold = fold_index
+        self.train_indices, self.val_indices = self.fold_splits[fold_index]
+        self.trainloader = self._build_loader(self.train_indices, self.train_transform, shuffle=True)
+        self.valloader = self._build_loader(self.val_indices, self.eval_transform, shuffle=False)
+
+    def iter_folds(self) -> Iterator[tuple[int, list[int], list[int]]]:
+        for fold_index, (train_indices, val_indices) in enumerate(self.fold_splits):
+            yield fold_index, train_indices, val_indices
+
+    def fold_count(self) -> int:
+        return len(self.fold_splits)
+
+    def build_holdout_trainval_loader(self, shuffle: bool = True):
+        if not self.trainval_indices:
+            raise RuntimeError("No trainval split is available. Set use_kfold=True.")
+        return self._build_loader(self.trainval_indices, self.train_transform, shuffle=shuffle)
 
 
     def save_model(self, model: nn.Module , path: str | None = None, save_optimizer: bool = False):

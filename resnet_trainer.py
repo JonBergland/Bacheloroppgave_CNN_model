@@ -26,25 +26,73 @@ class ResnetTrainer(BaseTrainer):
                  label_smoothing: float = 0.05,
                  weight_decay: float = 2e-3,
                  lr_step_size: int = 5,
-                 lr_gamma: float = 0.5):
-        super().__init__(dataset_root, model_name, epochs, lr_rate, batch_size, img_size, manual_seed, save_path)
-
-        self.model = ResNet9(num_classes=len(self.classes), in_channels=1, dropout_rate=dropout_rate)
-        self.model.to(self.device)
-
-        self.criterion = nn.CrossEntropyLoss(label_smoothing=label_smoothing)
-        self.optimizer = optim.Adam(self.model.parameters(), lr=lr_rate, amsgrad=True, weight_decay=weight_decay)
-        self.scheduler = torch.optim.lr_scheduler.StepLR(
-            self.optimizer, step_size=lr_step_size, gamma=lr_gamma
+                 lr_gamma: float = 0.5,
+                 use_kfold: bool = False,
+                 n_splits: int = 5,
+                 holdout_test_ratio: float = 0.15,
+                 stratified_kfold: bool = True,
+                 use_augmentation: bool = False,
+                 num_workers: int = 1):
+        super().__init__(
+            dataset_root=dataset_root,
+            model_name=model_name,
+            epochs=epochs,
+            lr_rate=lr_rate,
+            batch_size=batch_size,
+            img_size=img_size,
+            manual_seed=manual_seed,
+            save_path=save_path,
+            output_channels=1,
+            use_kfold=use_kfold,
+            n_splits=n_splits,
+            holdout_test_ratio=holdout_test_ratio,
+            stratified_kfold=stratified_kfold,
+            use_augmentation=use_augmentation,
+            num_workers=num_workers,
         )
 
-        if os.path.exists(self.save_path):
+        self.dropout_rate = dropout_rate
+        self.label_smoothing = label_smoothing
+        self.weight_decay = weight_decay
+        self.lr_rate = lr_rate
+        self.lr_step_size = lr_step_size
+        self.lr_gamma = lr_gamma
+
+        self._initialize_model_components()
+
+        if (not self.use_kfold) and os.path.exists(self.save_path):
             try:
                 self.load_model(self.model, self.save_path)
             except Exception as e:
                 print(f"Warning: failed to load model from {self.save_path}: {e}")
 
-        self.check_only_see_metrics(only_see_metrics)
+        if not self.use_kfold:
+            self.check_only_see_metrics(only_see_metrics)
+
+    def _initialize_model_components(self):
+        self.model = ResNet9(num_classes=len(self.classes), in_channels=1, dropout_rate=self.dropout_rate)
+        self.model.to(self.device)
+
+        self.criterion = nn.CrossEntropyLoss(label_smoothing=self.label_smoothing)
+        self.optimizer = optim.Adam(
+            self.model.parameters(),
+            lr=self.lr_rate,
+            amsgrad=True,
+            weight_decay=self.weight_decay,
+        )
+        self.scheduler = torch.optim.lr_scheduler.StepLR(
+            self.optimizer,
+            step_size=self.lr_step_size,
+            gamma=self.lr_gamma,
+        )
+
+    def reset_for_new_fold(self):
+        self.train_losses = []
+        self.val_losses = []
+        self.train_accuracies = []
+        self.val_accuracies = []
+        self.start_epoch = 0
+        self._initialize_model_components()
 
     def train(self):
         use_amp = (self.device_type == "cuda")

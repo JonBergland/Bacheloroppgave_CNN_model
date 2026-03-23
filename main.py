@@ -1,4 +1,5 @@
 import os
+import numpy as np
 from resnet_trainer import ResnetTrainer
 from vision_transformer_trainer import VisionTransformerTrainer
 
@@ -15,7 +16,13 @@ def main(dataset_root: str,
          label_smoothing: float = 0.05,
          weight_decay: float = 2e-3,
          lr_step_size: int = 5,
-         lr_gamma: float = 0.2):
+         lr_gamma: float = 0.2,
+         use_kfold: bool = False,
+         n_splits: int = 5,
+         holdout_test_ratio: float = 0.15,
+         stratified_kfold: bool = True,
+         use_augmentation: bool = False,
+         num_workers: int = 1):
 
     model_name_lower = model_name.lower()
     trainer_class = VisionTransformerTrainer if "vit" in model_name_lower else ResnetTrainer
@@ -35,15 +42,49 @@ def main(dataset_root: str,
         weight_decay=weight_decay,
         lr_step_size=lr_step_size,
         lr_gamma=lr_gamma,
+        use_kfold=use_kfold,
+        n_splits=n_splits,
+        holdout_test_ratio=holdout_test_ratio,
+        stratified_kfold=stratified_kfold,
+        use_augmentation=use_augmentation,
+        num_workers=num_workers,
     )
 
-    trainer.train()
-    trainer.evaluate()
+    if use_kfold:
+        fold_best_val_scores = []
+        for fold_idx in range(trainer.fold_count()):
+            print(f"\n=== Fold {fold_idx + 1}/{trainer.fold_count()} ===")
+            trainer.set_fold(fold_idx)
+            trainer.reset_for_new_fold()
+            trainer.train()
 
-    trainer.save_model(model=trainer.model, save_optimizer=True)
-    trainer.clear_model()
+            fold_best_val = max(trainer.val_accuracies) if trainer.val_accuracies else 0.0
+            fold_best_val_scores.append(fold_best_val)
+            print(f"Fold {fold_idx + 1} best validation accuracy: {fold_best_val:.2f}%")
 
-    trainer.plot_metrics()
+        mean_val = float(np.mean(fold_best_val_scores)) if fold_best_val_scores else 0.0
+        std_val = float(np.std(fold_best_val_scores)) if fold_best_val_scores else 0.0
+        print(f"\nK-Fold best validation accuracy mean: {mean_val:.2f}%")
+        print(f"K-Fold best validation accuracy std: {std_val:.2f}%")
+
+        print("\nRetraining on full trainval set...")
+        trainer.reset_for_new_fold()
+        full_trainval_loader = trainer.build_holdout_trainval_loader(shuffle=True)
+        # Swap trainloader temporarily
+        trainer.trainloader = full_trainval_loader
+        trainer.train()
+
+        print("\nEvaluating final model on holdout test set")
+        trainer.evaluate()
+        trainer.clear_model()
+    else:
+        trainer.train()
+        trainer.evaluate()
+
+        trainer.save_model(model=trainer.model, save_optimizer=True)
+        trainer.clear_model()
+
+        trainer.plot_metrics()
 
     
 if __name__ == '__main__':
@@ -52,11 +93,17 @@ if __name__ == '__main__':
     save_path = os.path.join(BASE_DIR, "saved_models")
     model_name = "vit_64_no_data_augmentation.pth"
 
-    epochs = 30
+    epochs = 20
     batch_size = 32
     img_size = 64
     manual_seed = 42
     only_see_metrics = False
+    use_kfold = True
+    n_splits = 5
+    holdout_test_ratio = 0.15
+    stratified_kfold = True
+    use_augmentation = False
+    num_workers = 1
 
     if "resnet" in model_name.lower():
         # ResNet settings
@@ -95,5 +142,11 @@ if __name__ == '__main__':
         label_smoothing=label_smoothing,
         weight_decay=weight_decay,
         lr_step_size=lr_step_size,
-        lr_gamma=lr_gamma)
+        lr_gamma=lr_gamma,
+        use_kfold=use_kfold,
+        n_splits=n_splits,
+        holdout_test_ratio=holdout_test_ratio,
+        stratified_kfold=stratified_kfold,
+        use_augmentation=use_augmentation,
+        num_workers=num_workers)
 
