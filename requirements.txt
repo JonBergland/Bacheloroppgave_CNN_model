@@ -3,3 +3,4 @@ torchvision==0.25.0+cu126
 matplotlib
 numpy
 pillow
+scikit-learn
