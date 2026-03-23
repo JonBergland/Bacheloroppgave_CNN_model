@@ -52,14 +52,22 @@ def main(dataset_root: str,
 
     if use_kfold:
         fold_best_val_scores = []
+        fold_model_paths = []
+        
         for fold_idx in range(trainer.fold_count()):
             print(f"\n=== Fold {fold_idx + 1}/{trainer.fold_count()} ===")
             trainer.set_fold(fold_idx)
             trainer.reset_for_new_fold()
+            
+            # Create fold-specific save path
+            fold_save_path = trainer.save_path.replace('.pth', f'_fold_{fold_idx+1}.pth')
+            trainer.save_path = fold_save_path
+            
             trainer.train()
 
             fold_best_val = max(trainer.val_accuracies) if trainer.val_accuracies else 0.0
             fold_best_val_scores.append(fold_best_val)
+            fold_model_paths.append(fold_save_path)
             print(f"Fold {fold_idx + 1} best validation accuracy: {fold_best_val:.2f}%")
 
         mean_val = float(np.mean(fold_best_val_scores)) if fold_best_val_scores else 0.0
@@ -70,13 +78,23 @@ def main(dataset_root: str,
         print("\nRetraining on full trainval set...")
         trainer.reset_for_new_fold()
         full_trainval_loader = trainer.build_holdout_trainval_loader(shuffle=True)
-        # Swap trainloader temporarily
         trainer.trainloader = full_trainval_loader
+        
+        # Set final model save path
+        final_save_path = trainer.save_path.replace('.pth', '_final_trainval.pth')
+        trainer.save_path = final_save_path
+        
         trainer.train()
 
         print("\nEvaluating final model on holdout test set")
         trainer.evaluate()
+        
+        # Save final trained model
+        trainer.save_model(model=trainer.model, save_optimizer=True)
+        
         trainer.clear_model()
+        print(f"Fold models saved: {fold_model_paths}")
+        print(f"Final model saved: {final_save_path}")
     else:
         trainer.train()
         trainer.evaluate()
@@ -119,7 +137,7 @@ if __name__ == '__main__':
         label_smoothing = 0.1
         weight_decay = 1e-2
         lr_rate = 3e-4
-        lr_step_size = 10
+        lr_step_size = 5
         lr_gamma = 0.5
     else:
         raise ValueError(
