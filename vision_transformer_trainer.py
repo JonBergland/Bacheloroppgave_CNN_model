@@ -15,7 +15,7 @@ class VisionTransformerTrainer(BaseTrainer):
                  epochs: int = 5,
                  lr_rate: float = 0.01,
                  batch_size: int = 32,
-                 img_size: int = 32, 
+                 img_size: int = 64, 
                  manual_seed: int = 42,
                  save_path: str | None = None,
                  only_see_metrics: bool = False,

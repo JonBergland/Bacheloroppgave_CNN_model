@@ -7,7 +7,7 @@ def main(dataset_root: str,
          epochs: int = 5,
          lr_rate: float = 0.01,
          batch_size: int = 32,
-         img_size: int = 128, 
+         img_size: int = 64, 
          manual_seed: int = 42,
          save_path: str | None = None,
          only_see_metrics: bool = False,
@@ -50,11 +50,11 @@ if __name__ == '__main__':
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     root = os.path.join(BASE_DIR, "dataset")
     save_path = os.path.join(BASE_DIR, "saved_models")
-    model_name = "vit_no_data_augmentation.pth"
+    model_name = "vit_64_no_data_augmentation.pth"
 
     epochs = 30
     batch_size = 32
-    img_size = 128
+    img_size = 64
     manual_seed = 42
     only_see_metrics = False
 

@@ -12,7 +12,7 @@ class BaseTrainer:
                  epochs: int = 5,
                  lr_rate: float = 0.01,
                  batch_size: int = 32,
-                 img_size: int = 32, 
+                 img_size: int = 64, 
                  manual_seed: int = 42,
                  save_path: str | None = None,
                  output_channels: int = 1):
@@ -26,6 +26,8 @@ class BaseTrainer:
             transforms.Resize((img_size, img_size)),
             # transforms.RandomHorizontalFlip(), # Data augmentations
             # transforms.RandomRotation(10),     # Data augmentation
+            # Scale
+            # Flytting
             transforms.Grayscale(num_output_channels=output_channels),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.449], std=[0.226])
