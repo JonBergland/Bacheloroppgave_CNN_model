@@ -21,7 +21,7 @@ def objective(trial: optuna.Trial,):
     only_see_metrics = False
     use_kfold = True
     n_splits = 5
-    holdout_test_ratio = 0.15
+    holdout_test_ratio = 0.10
     stratified_kfold = True
     use_augmentation = False
     num_workers = 1
