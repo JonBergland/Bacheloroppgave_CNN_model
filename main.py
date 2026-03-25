@@ -23,8 +23,11 @@ def _create_sampler(seed: int = 42) -> optuna.samplers.BaseSampler:
 def objective(trial: optuna.Trial,):
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     root = os.path.join(BASE_DIR, "dataset")
-    save_path = os.path.join(BASE_DIR, "saved_models")
+
     model_name = "vit_64_no_data_augmentation.pth"
+    save_dir = os.path.join(BASE_DIR, "saved_models")
+    os.makedirs(save_dir, exist_ok=True)
+    save_path = os.path.join(save_dir, model_name)
 
     epochs = 30
     batch_size = 64
@@ -46,6 +49,7 @@ def objective(trial: optuna.Trial,):
         lr_rate = 1e-3
         lr_step_size = 5
         lr_gamma = 0.2
+        vit_depth = 6
     elif "vit" in model_name.lower():
         # ViT settings
         dropout_rate = trial.suggest_float("dropout_rate", 0.1, 0.6)
@@ -60,12 +64,12 @@ def objective(trial: optuna.Trial,):
         raise ValueError(
             "model_name must include either 'resnet' or 'vit' to choose model-specific parameters"
         )
-    
 
-    mean_val, std_val = main(dataset_root=root,
+    mean_val, std_val = main(
+        dataset_root=root,
         model_name=model_name,
-        epochs= epochs,
-        lr_rate= lr_rate,
+        epochs=epochs,
+        lr_rate=lr_rate,
         batch_size=batch_size,
         img_size=img_size,
         manual_seed=manual_seed,
@@ -82,16 +86,18 @@ def objective(trial: optuna.Trial,):
         stratified_kfold=stratified_kfold,
         use_augmentation=use_augmentation,
         num_workers=num_workers,
-        vit_depth=vit_depth)
+        vit_depth=vit_depth,
+    )
 
     return mean_val, std_val
 
+
 def main(dataset_root: str,
-         model_name: str, 
+         model_name: str,
          epochs: int = 5,
          lr_rate: float = 0.01,
          batch_size: int = 32,
-         img_size: int = 64, 
+         img_size: int = 64,
          manual_seed: int = 42,
          save_path: str | None = None,
          only_see_metrics: bool = False,
@@ -138,16 +144,20 @@ def main(dataset_root: str,
     if use_kfold:
         fold_best_val_scores = []
         fold_model_paths = []
-        
+
         for fold_idx in range(trainer.fold_count()):
             print(f"\n=== Fold {fold_idx + 1}/{trainer.fold_count()} ===")
             trainer.set_fold(fold_idx)
             trainer.reset_for_new_fold()
-            
-            # Create fold-specific save path
-            fold_save_path = save_path.replace('.pth', f'_fold_{fold_idx+1}.pth')
+
+            # Create fold-specific save path from current trainer.save_path (always file path).
+            base_path = trainer.save_path
+            root_path, ext = os.path.splitext(base_path)
+            if not ext:
+                ext = ".pth"
+            fold_save_path = f"{root_path}_fold_{fold_idx + 1}{ext}"
             trainer.save_path = fold_save_path
-            
+
             trainer.train()
 
             fold_best_val = max(trainer.val_accuracies) if trainer.val_accuracies else 0.0
@@ -164,19 +174,19 @@ def main(dataset_root: str,
         # trainer.reset_for_new_fold()
         # full_trainval_loader = trainer.build_holdout_trainval_loader(shuffle=True)
         # trainer.trainloader = full_trainval_loader
-        
+
         # # Set final model save path
         # final_save_path = trainer.save_path.replace('.pth', '_final_trainval.pth')
         # trainer.save_path = final_save_path
-        
+
         # trainer.train()
 
         # print("\nEvaluating final model on holdout test set")
         # trainer.evaluate()
-        
+
         # Save final trained model
         # trainer.save_model(model=trainer.model, save_optimizer=True)
-        
+
         trainer.clear_model()
         print(f"Fold models saved: {fold_model_paths}")
         # print(f"Final model saved: {final_save_path}")
@@ -191,9 +201,9 @@ def main(dataset_root: str,
 
         trainer.plot_metrics()
 
-    
+
 if __name__ == '__main__':
-    study_name = "ViT Hyperparameter Study" 
+    study_name = "ViT Hyperparameter Study"
     storage_name = "sqlite:///{}.db".format(study_name)
     directions = [StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE]
     sampler = _create_sampler(seed=42)
@@ -202,12 +212,12 @@ if __name__ == '__main__':
         study_name=study_name,
         sampler=sampler,
         storage=storage_name,
-        load_if_exists= True,
+        load_if_exists=True,
         directions=directions
-        )
+    )
 
     for _ in range(1):
-            study.optimize(objective, n_trials=1)
+        study.optimize(objective, n_trials=1)
 
     # Multi-objective studies expose best_trials (Pareto front), not best_value/best_params.
     if study.best_trials:
