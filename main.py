@@ -8,6 +8,18 @@ from optuna.study import StudyDirection
 from optuna_dashboard import run_server
 
 
+def _create_sampler(seed: int = 42) -> optuna.samplers.BaseSampler:
+    """Return AutoSampler when available; otherwise use a local fallback sampler."""
+    try:
+        module = optunahub.load_module(package="samplers/auto_sampler")
+        print("Using OptunaHub AutoSampler.")
+        return module.AutoSampler()
+    except Exception as exc:
+        # NSGA-II works well for multi-objective optimization without network access.
+        print(f"OptunaHub unavailable ({exc}). Falling back to NSGAIISampler.")
+        return optuna.samplers.NSGAIISampler(seed=seed)
+
+
 def objective(trial: optuna.Trial,):
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     root = os.path.join(BASE_DIR, "dataset")
@@ -183,18 +195,24 @@ def main(dataset_root: str,
 if __name__ == '__main__':
     study_name = "ViT Hyperparameter Study" 
     storage_name = "sqlite:///{}.db".format(study_name)
-    module = optunahub.load_module(package="samplers/auto_sampler")
     directions = [StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE]
+    sampler = _create_sampler(seed=42)
 
     study = optuna.create_study(
         study_name=study_name,
-        sampler=module.AutoSampler(),
+        sampler=sampler,
         storage=storage_name,
         load_if_exists= True,
         directions=directions
         )
 
-    for _ in range(10):
-            study.optimize(objective, n_trials=5)
-    print(f"Best value: {study.best_value} (params: {study.best_params})")
+    for _ in range(1):
+            study.optimize(objective, n_trials=1)
+
+    # Multi-objective studies expose best_trials (Pareto front), not best_value/best_params.
+    if study.best_trials:
+        best_trial = study.best_trials[0]
+        print(f"Best trial values: {best_trial.values} (params: {best_trial.params})")
+    else:
+        print("No completed trials yet.")
 
