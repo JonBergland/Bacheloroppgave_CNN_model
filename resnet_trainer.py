@@ -32,7 +32,8 @@ class ResnetTrainer(BaseTrainer):
                  holdout_test_ratio: float = 0.15,
                  stratified_kfold: bool = True,
                  use_augmentation: bool = False,
-                 num_workers: int = 1):
+                 num_workers: int = 1,
+                 depth: int = 6):
         super().__init__(
             dataset_root=dataset_root,
             model_name=model_name,
@@ -57,6 +58,7 @@ class ResnetTrainer(BaseTrainer):
         self.lr_rate = lr_rate
         self.lr_step_size = lr_step_size
         self.lr_gamma = lr_gamma
+        self.depth = depth
 
         self._initialize_model_components()
 

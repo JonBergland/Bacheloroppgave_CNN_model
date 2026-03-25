@@ -29,7 +29,8 @@ class VisionTransformerTrainer(BaseTrainer):
                  holdout_test_ratio: float = 0.15,
                  stratified_kfold: bool = True,
                  use_augmentation: bool = False,
-                 num_workers: int = 1):
+                 num_workers: int = 1,
+                 depth: int = 6):
         super().__init__(
             dataset_root=dataset_root,
             model_name=model_name,
@@ -55,7 +56,7 @@ class VisionTransformerTrainer(BaseTrainer):
         self.lr_step_size = lr_step_size
         self.lr_gamma = lr_gamma
 
-        self._initialize_model_components()
+        self._initialize_model_components(depth=depth)
 
         if (not self.use_kfold) and os.path.exists(self.save_path):
             try:
@@ -66,14 +67,14 @@ class VisionTransformerTrainer(BaseTrainer):
         
         self.check_only_see_metrics(only_see_metrics)
 
-    def _initialize_model_components(self):
+    def _initialize_model_components(self, depth: int = 6):
         self.model = VisionTransformer(
             img_size=self.img_size,
             patch_size=8,
             num_classes=len(self.classes),
             embed_dim=288,
             num_heads=6,
-            depth=6,
+            depth=depth,
             mlp_dim=864,
             in_channels=1,
             dropout=self.dropout_rate,
