@@ -52,13 +52,13 @@ def objective(trial: optuna.Trial,):
         vit_depth = 6
     elif "vit" in model_name.lower():
         # ViT settings
-        dropout_rate = trial.suggest_float("dropout_rate", 0.1, 0.6)
-        label_smoothing = trial.suggest_float("label_smoothing", 0.01, 0.3)
-        weight_decay = trial.suggest_float("weight_decay", 1e-3, 1e-1)
-        lr_rate = trial.suggest_float("lr_rate", 1e-5, 3e-3, log=True)
+        dropout_rate = trial.suggest_float("dropout_rate", 0.1, 0.6, step=0.01)
+        label_smoothing = trial.suggest_float("label_smoothing", 0.01, 0.3, step=0.01)
+        weight_decay = trial.suggest_float("weight_decay", 1e-3, 1e-1, step=0.001)
+        lr_rate = trial.suggest_float("lr_rate", 1e-5, 3e-3, log=True, step=0.00001)
 
         lr_step_size = trial.suggest_int("lr_step_size", 3, 10)
-        lr_gamma = trial.suggest_float("lr_gamma", 0.4, 0.9)
+        lr_gamma = trial.suggest_float("lr_gamma", 0.4, 0.9, step=0.01)
         vit_depth = trial.suggest_categorical("vit_depth", [4, 6, 8, 10, 12])
     else:
         raise ValueError(
@@ -216,7 +216,9 @@ if __name__ == '__main__':
         directions=directions
     )
 
-    for _ in range(1):
+    run_server(storage_name)
+
+    for _ in range(0):
         study.optimize(objective, n_trials=1)
 
     # Multi-objective studies expose best_trials (Pareto front), not best_value/best_params.
