@@ -218,7 +218,7 @@ if __name__ == '__main__':
 
     # run_server(storage_name)
 
-    for _ in range(10):
+    for _ in range(30):
         study.optimize(objective, n_trials=1)
 
     # Multi-objective studies expose best_trials (Pareto front), not best_value/best_params.
