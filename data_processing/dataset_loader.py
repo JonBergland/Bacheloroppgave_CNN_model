@@ -21,29 +21,42 @@ class DatasetLoader:
             output_channels=self.output_channels,
         )
 
+
+        # TODO create an original dataset that is the dataset without any augmentations. 
+        # Create subsets from there.
         base_dataset = ImageFolder(root=self.dataset_root, transform=self.data_augmentation.getBaseTransform())
         self.classes = base_dataset.classes
         self.datasets: list[Dataset] = [base_dataset]
+
+
+    def getDataAugmentations(
+            self,
+            use_augmentations: bool = False
+        ):
+        if use_augmentations:
+            return self.data_augmentation.getDataAugmentations(
+                horizontal_flip=True,
+                vertical_flip=True,
+                resizing=True,
+                translation=True,
+                blur=True,
+                color_jitter=True,
+                random_erasing=True,
+            )
+        else:
+            return self.data_augmentation.getDataAugmentations()
         
     def getDataset(
         self,
-        horizontal_flip: bool = False,
-        vertical_flip: bool = False,
-        resizing: bool = False,
-        translation: bool = False,
-        blur: bool = False,
-        color_jitter: bool = False,
-        random_erasing: bool = False,
-    ) -> Dataset:
-        augmentation_transforms = self.data_augmentation.getDataAugmentations(
-            horizontal_flip=horizontal_flip,
-            vertical_flip=vertical_flip,
-            resizing=resizing,
-            translation=translation,
-            blur=blur,
-            color_jitter=color_jitter,
-            random_erasing=random_erasing,
-        )
+        use_augmentations: bool = False,
+        test_ratio: float = 0.15
+        ) -> Dataset:
+        
+        ## PSUDO KODE
+        ## TRAIN - TEST split
+
+
+        augmentation_transforms = self.getDataAugmentations(use_augmentations=use_augmentations)
 
         for transform in augmentation_transforms:
             self.datasets.append(ImageFolder(root=self.dataset_root, transform=transform))
