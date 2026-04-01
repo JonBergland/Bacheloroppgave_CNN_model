@@ -21,7 +21,7 @@ class DatasetLoader:
             output_channels=self.output_channels,
         )
 
-        base_dataset = ImageFolder(root=self.dataset_root, transform=self.data_augmentation.base_transforms)
+        base_dataset = ImageFolder(root=self.dataset_root, transform=self.data_augmentation.getBaseTransform())
         self.classes = base_dataset.classes
         self.datasets: list[Dataset] = [base_dataset]
         
@@ -35,8 +35,6 @@ class DatasetLoader:
         color_jitter: bool = False,
         random_erasing: bool = False,
     ) -> Dataset:
-        # datasets: list[Dataset] = [self.base_dataset]
-
         augmentation_transforms = self.data_augmentation.getDataAugmentations(
             horizontal_flip=horizontal_flip,
             vertical_flip=vertical_flip,

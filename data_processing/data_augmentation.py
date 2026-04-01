@@ -17,6 +17,9 @@ class DataAugmentation:
             v2.Normalize(mean=[0.449], std=[0.226]),
         ]
 
+    def getBaseTransform(self):
+        return self.base_transforms
+
     def getDataAugmentations(
         self,
         horizontal_flip: bool = False,
