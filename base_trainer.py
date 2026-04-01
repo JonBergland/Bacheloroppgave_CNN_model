@@ -6,8 +6,11 @@ import torch
 import torch.nn as nn
 import torchvision
 from sklearn.model_selection import KFold, StratifiedKFold
-from torch.utils.data import DataLoader, Dataset
-from torchvision import transforms
+from torch.utils.data import DataLoader, Dataset, ConcatDataset
+from torchvision.transforms import v2
+
+from data_processing.data_augmentation import DataAugmentation
+from data_processing.dataset_loader import DatasetLoader
 
 
 class TransformSubset(Dataset):
@@ -109,24 +112,24 @@ class BaseTrainer:
         ops = [transforms.Resize((self.img_size, self.img_size))]
         if use_augmentation:
             ops.extend([
-                transforms.RandomHorizontalFlip(),
-                transforms.RandomRotation(10),
+                v2.RandomHorizontalFlip(),
+                v2.RandomRotation(10),
                 # Scale
                 # Flytting
             ])
         ops.extend([
-            transforms.Grayscale(num_output_channels=self.output_channels),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.449], std=[0.226]),
+            v2.Grayscale(num_output_channels=self.output_channels),
+            v2.ToTensor(),
+            v2.Normalize(mean=[0.449], std=[0.226]),
         ])
-        return transforms.Compose(ops)
+        return v2.Compose(ops)
 
     def make_eval_transform(self):
-        return transforms.Compose([
-            transforms.Resize((self.img_size, self.img_size)),
-            transforms.Grayscale(num_output_channels=self.output_channels),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.449], std=[0.226]),
+        return v2.Compose([
+            v2.Resize((self.img_size, self.img_size)),
+            v2.Grayscale(num_output_channels=self.output_channels),
+            v2.ToTensor(),
+            v2.Normalize(mean=[0.449], std=[0.226]),
         ])
 
     def _initialize_fixed_split(self):
