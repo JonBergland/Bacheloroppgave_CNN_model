@@ -55,7 +55,7 @@ def objective(trial: optuna.Trial,):
         dropout_rate = trial.suggest_float("dropout_rate", 0.1, 0.6, step=0.01)
         label_smoothing = trial.suggest_float("label_smoothing", 0.01, 0.3, step=0.01)
         weight_decay = trial.suggest_float("weight_decay", 1e-3, 1e-1, step=0.001)
-        lr_rate = trial.suggest_float("lr_rate", 1e-5, 3e-3, log=True, step=0.00001)
+        lr_rate = trial.suggest_float("lr_rate", 1e-5, 3e-3, log=True)
 
         lr_step_size = trial.suggest_int("lr_step_size", 3, 10)
         lr_gamma = trial.suggest_float("lr_gamma", 0.4, 0.9, step=0.01)
