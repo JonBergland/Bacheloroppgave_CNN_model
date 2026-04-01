@@ -2,6 +2,10 @@ from torchvision.transforms import v2
 
 
 class DataAugmentation:
+    """
+    A data class that deals with creating objects of torchvision's transforms-class
+    """
+
     def __init__(self, img_size: int, output_channels: int = 1):
         self.img_size = img_size
         self.output_channels = output_channels
