@@ -1,3 +1,4 @@
+import numpy as np
 from torch.utils.data import ConcatDataset, Dataset
 from torchvision.datasets import ImageFolder
 from torchvision.transforms import v2
@@ -20,7 +21,9 @@ class DatasetLoader:
             output_channels=self.output_channels,
         )
 
-        self.base_dataset = ImageFolder(root=self.dataset_root, transform=self.data_augmentation.base_transforms)
+        base_dataset = ImageFolder(root=self.dataset_root, transform=self.data_augmentation.base_transforms)
+        self.classes = base_dataset.classes
+        self.datasets: list[Dataset] = [base_dataset]
         
     def getDataset(
         self,
@@ -32,7 +35,7 @@ class DatasetLoader:
         color_jitter: bool = False,
         random_erasing: bool = False,
     ) -> Dataset:
-        datasets: list[Dataset] = [self.base_dataset]
+        # datasets: list[Dataset] = [self.base_dataset]
 
         augmentation_transforms = self.data_augmentation.getDataAugmentations(
             horizontal_flip=horizontal_flip,
@@ -45,10 +48,17 @@ class DatasetLoader:
         )
 
         for transform in augmentation_transforms:
-            datasets.append(ImageFolder(root=self.dataset_root, transform=transform))
+            self.datasets.append(ImageFolder(root=self.dataset_root, transform=transform))
 
-        if len(datasets) == 1:
-            return datasets[0]
+        return ConcatDataset(self.datasets)
+    
+    def getDatasetClasses(self):
+        return self.classes
+    
+    def getDatasetTargets(self): 
+        all_targets = []
+        for ds in self.dataset.datasets:
+            all_targets.extend(ds.targets) 
+        return np.array(all_targets)
 
-        return ConcatDataset(datasets)
 
