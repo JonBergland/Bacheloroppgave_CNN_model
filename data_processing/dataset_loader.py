@@ -5,7 +5,7 @@ from torchvision.transforms import v2
 from data_processing.data_augmentation import DataAugmentation
 
 
-class DatasetLoading:
+class DatasetLoader:
     """
     Loads the base dataset from the given root and can expand it with augmented copies.
     """
