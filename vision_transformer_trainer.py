@@ -31,6 +31,7 @@ class VisionTransformerTrainer(BaseTrainer):
                  num_workers: int = 1,
                  augment_train_split: bool = False,
                  augment_test_split: bool = False,
+                 dataset_is_preprocessed: bool = True,
                  depth: int = 6):
         super().__init__(
             dataset_root=dataset_root,
@@ -49,6 +50,7 @@ class VisionTransformerTrainer(BaseTrainer):
             num_workers=num_workers,
             augment_train_split=augment_train_split,
             augment_test_split=augment_test_split,
+            dataset_is_preprocessed=dataset_is_preprocessed,
         )
 
         self.dropout_rate = dropout_rate

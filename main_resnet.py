@@ -142,6 +142,7 @@ def main(dataset_root: str,
         augment_train_split=augment_train_split,
         augment_test_split=augment_test_split,
         num_workers=num_workers,
+        dataset_is_preprocessed=True,
         depth=vit_depth
     )
 

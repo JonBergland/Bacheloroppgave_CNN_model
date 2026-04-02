@@ -1,4 +1,5 @@
 import os
+import copy
 from typing import Iterator
 
 import numpy as np
@@ -28,7 +29,8 @@ class BaseTrainer:
                  stratified_kfold: bool = True,
                  num_workers: int = 1,
                  augment_train_split: bool = False,
-                 augment_test_split: bool = False):
+                 augment_test_split: bool = False,
+                 dataset_is_preprocessed: bool = True):
 
         self.epochs = epochs
         self.batch_size = batch_size
@@ -43,6 +45,7 @@ class BaseTrainer:
         self.dataset_root = dataset_root
         self.augment_train_split = augment_train_split
         self.augment_test_split = augment_test_split
+        self.dataset_is_preprocessed = dataset_is_preprocessed
 
         self.device_type = "cuda" if torch.cuda.is_available() else "cpu"
         self.device = torch.device(self.device_type)
@@ -51,7 +54,10 @@ class BaseTrainer:
 
         self.data_augmentation = DataAugmentation(img_size=img_size, output_channels=output_channels)
 
-        self.base_dataset = torchvision.datasets.ImageFolder(root=dataset_root, transform=self.data_augmentation.getBaseTransform())
+        self.base_dataset = torchvision.datasets.ImageFolder(
+            root=dataset_root,
+            transform=self.data_augmentation.getBaseTransform(preprocessed_input=dataset_is_preprocessed),
+        )
         self.dataset = self.base_dataset
 
         self.classes = self.base_dataset.classes
@@ -187,13 +193,12 @@ class BaseTrainer:
                 blur=True,
                 color_jitter=True,
                 random_erasing=True,
+                preprocessed_input=self.dataset_is_preprocessed,
             )
 
             for transform in augmentation_transforms:
-                augmented_dataset = torchvision.datasets.ImageFolder(
-                    root=self.dataset_root,
-                    transform=transform,
-                )
+                augmented_dataset = copy.deepcopy(self.base_dataset)
+                augmented_dataset.transform = transform
                 datasets.append(Subset(augmented_dataset, indices))
 
         if len(datasets) == 1:
