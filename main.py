@@ -36,9 +36,10 @@ def objective(trial: optuna.Trial,):
     only_see_metrics = False
     use_kfold = True
     n_splits = 5
-    holdout_test_ratio = 0.10
+    test_ratio = 0.10
     stratified_kfold = True
-    use_augmentation = False
+    augment_train_split = False
+    augment_test_split = False
     num_workers = 1
 
     if "resnet" in model_name.lower():
@@ -82,9 +83,10 @@ def objective(trial: optuna.Trial,):
         lr_gamma=lr_gamma,
         use_kfold=use_kfold,
         n_splits=n_splits,
-        holdout_test_ratio=holdout_test_ratio,
+        test_ratio=test_ratio,
         stratified_kfold=stratified_kfold,
-        use_augmentation=use_augmentation,
+        augment_train_split=augment_train_split,
+        augment_test_split=augment_test_split,
         num_workers=num_workers,
         vit_depth=vit_depth,
     )
@@ -108,9 +110,10 @@ def main(dataset_root: str,
          lr_gamma: float = 0.2,
          use_kfold: bool = False,
          n_splits: int = 5,
-         holdout_test_ratio: float = 0.15,
+         test_ratio: float = 0.15,
          stratified_kfold: bool = True,
-         use_augmentation: bool = False,
+         augment_train_split: bool = False,
+         augment_test_split: bool = False,
          num_workers: int = 1,
          vit_depth: int = 6):
 
@@ -134,9 +137,10 @@ def main(dataset_root: str,
         lr_gamma=lr_gamma,
         use_kfold=use_kfold,
         n_splits=n_splits,
-        holdout_test_ratio=holdout_test_ratio,
+        test_ratio=test_ratio,
         stratified_kfold=stratified_kfold,
-        use_augmentation=use_augmentation,
+        augment_train_split=augment_train_split,
+        augment_test_split=augment_test_split,
         num_workers=num_workers,
         depth=vit_depth
     )

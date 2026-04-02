@@ -24,7 +24,7 @@ class BaseTrainer:
                  output_channels: int = 1,
                  use_kfold: bool = False,
                  n_splits: int = 5,
-                 holdout_test_ratio: float = 0.15,
+                 test_ratio: float = 0.15,
                  stratified_kfold: bool = True,
                  num_workers: int = 1,
                  augment_train_split: bool = False,
@@ -37,9 +37,8 @@ class BaseTrainer:
         self.output_channels = output_channels
         self.use_kfold = use_kfold
         self.n_splits = n_splits
-        self.holdout_test_ratio = holdout_test_ratio
+        self.holdout_test_ratio = test_ratio
         self.stratified_kfold = stratified_kfold
-        self.use_augmentation = use_augmentation
         self.num_workers = num_workers
         self.dataset_root = dataset_root
         self.augment_train_split = augment_train_split
