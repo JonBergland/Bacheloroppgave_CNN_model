@@ -1,5 +1,6 @@
 
 
+import copy
 import numpy as np
 from torch.utils.data import ConcatDataset, Dataset, Subset
 from torchvision.datasets import ImageFolder
@@ -108,7 +109,6 @@ class DatasetSplitter:
             augmentation_transforms = self.data_augmentation.getDataAugmentations(
                 horizontal_flip=True,
                 vertical_flip=True,
-                resizing=True,
                 translation=True,
                 blur=True,
                 color_jitter=True,
@@ -126,7 +126,12 @@ class DatasetSplitter:
     def _create_subset(self, indices: list[int], transform=None):
         """Create an copy of the images connected to the indices and use transforms on them"""
         base_dataset = self.dataset_loader.datasets[0]
-        return SubsetWithTransform(base_dataset, indices, transform=transform)
+        subset_dataset = copy.deepcopy(base_dataset)
+
+        if transform is not None:
+            subset_dataset.transform = transform
+
+        return Subset(subset_dataset, indices)
         
     def get_train_test_datasets(
         self,
