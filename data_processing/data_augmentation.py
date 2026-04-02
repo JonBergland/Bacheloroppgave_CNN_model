@@ -27,7 +27,7 @@ class DataAugmentation:
 
     def _compose_pipeline(self, transforms: list | None = None):
         transforms = transforms or []
-        return v2.Compose(transforms + self._end_ops())
+        return v2.Compose(self._preprocessed_ops() + transforms + self._end_ops())
 
     def getBaseTransform(self):
         return self._compose_pipeline()
