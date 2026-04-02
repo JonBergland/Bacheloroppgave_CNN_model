@@ -10,11 +10,16 @@ class DataAugmentation:
         self.img_size = img_size
         self.output_channels = output_channels
 
-    def _preprocessed_ops(self):
+    def _not_preprocessed_ops(self):
+        # Base Transforms for when the dataset is not preprocessed
         return [
             v2.Resize((self.img_size, self.img_size)),
             v2.Grayscale(num_output_channels=self.output_channels),
         ]
+
+    def _preprocessed_ops(self):
+        # Base Transforms for when the dataset is preprocessed 
+        return [v2.Grayscale(num_output_channels=self.output_channels)]
 
     def _end_ops(self):
         return [
@@ -27,13 +32,13 @@ class DataAugmentation:
 
     def _compose_pipeline(self, transforms: list | None = None, preprocessed_input: bool = True):
         transforms = transforms or []
-        ops = [] if preprocessed_input else self._preprocessed_ops()
+        ops = self._preprocessed_ops() if preprocessed_input else self._not_preprocessed_ops()
         return v2.Compose(ops + transforms + self._end_ops())
 
     def getBaseTransform(self, preprocessed_input: bool = True):
         if preprocessed_input:
-            return v2.Compose(self._end_ops())
-        return v2.Compose(self._preprocessed_ops() + self._end_ops())
+            return v2.Compose(self._preprocessed_ops() + self._end_ops())
+        return v2.Compose(self._not_preprocessed_ops() + self._end_ops())
 
     def getDataAugmentations(
         self,
@@ -75,7 +80,7 @@ class DataAugmentation:
             )
 
         if random_erasing:
-            erasing_ops = [] if preprocessed_input else self._preprocessed_ops()
+            erasing_ops = self._preprocessed_ops() if preprocessed_input else self._not_preprocessed_ops()
             erasing_ops.extend([
                 self.toTensor(),
                 v2.RandomErasing(p=1.0, scale=(0.02, 0.2), ratio=(0.3, 3.3)),
