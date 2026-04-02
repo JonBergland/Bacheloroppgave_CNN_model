@@ -37,7 +37,6 @@ class DatasetLoader:
             return self.data_augmentation.getDataAugmentations(
                 horizontal_flip=True,
                 vertical_flip=True,
-                resizing=True,
                 translation=True,
                 blur=True,
                 color_jitter=True,
@@ -49,12 +48,7 @@ class DatasetLoader:
     def getDataset(
         self,
         use_augmentations: bool = False,
-        test_ratio: float = 0.15
         ) -> Dataset:
-        
-        ## PSUDO KODE
-        ## TRAIN - TEST split
-
 
         augmentation_transforms = self.getDataAugmentations(use_augmentations=use_augmentations)
 
@@ -68,7 +62,7 @@ class DatasetLoader:
     
     def getDatasetTargets(self): 
         all_targets = []
-        for ds in self.dataset.datasets:
+        for ds in self.datasets:
             all_targets.extend(ds.targets) 
         return np.array(all_targets)
 
