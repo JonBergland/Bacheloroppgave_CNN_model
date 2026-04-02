@@ -28,8 +28,9 @@ class VisionTransformerTrainer(BaseTrainer):
                  n_splits: int = 5,
                  holdout_test_ratio: float = 0.15,
                  stratified_kfold: bool = True,
-                 use_augmentation: bool = False,
                  num_workers: int = 1,
+                 augment_train_split: bool = False,
+                 augment_test_split: bool = False,
                  depth: int = 6):
         super().__init__(
             dataset_root=dataset_root,
@@ -45,8 +46,9 @@ class VisionTransformerTrainer(BaseTrainer):
             n_splits=n_splits,
             holdout_test_ratio=holdout_test_ratio,
             stratified_kfold=stratified_kfold,
-            use_augmentation=use_augmentation,
             num_workers=num_workers,
+            augment_train_split=augment_train_split,
+            augment_test_split=augment_test_split,
         )
 
         self.dropout_rate = dropout_rate
