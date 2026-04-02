@@ -22,7 +22,7 @@ def _create_sampler(seed: int = 42) -> optuna.samplers.BaseSampler:
 
 def objective(trial: optuna.Trial,):
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    root = os.path.join(BASE_DIR, "dataset")
+    root = os.path.join(BASE_DIR, "dataset_preprocessed")
 
     model_name = "vit_64_no_data_augmentation.pth"
     save_dir = os.path.join(BASE_DIR, "saved_models")
