@@ -6,27 +6,10 @@ import torch
 import torch.nn as nn
 import torchvision
 from sklearn.model_selection import KFold, StratifiedKFold
-from torch.utils.data import DataLoader, Dataset, ConcatDataset
+from torch.utils.data import DataLoader, Dataset, ConcatDataset, Subset
 from torchvision.transforms import v2
 
 from data_processing.data_augmentation import DataAugmentation
-from data_processing.dataset_loader import DatasetLoader
-
-
-class TransformSubset(Dataset):
-    def __init__(self, base_dataset: Dataset, indices: list[int], transform=None):
-        self.base_dataset = base_dataset
-        self.indices = list(indices)
-        self.transform = transform
-
-    def __len__(self):
-        return len(self.indices)
-
-    def __getitem__(self, idx):
-        image, target = self.base_dataset[self.indices[idx]]
-        if self.transform is not None:
-            image = self.transform(image)
-        return image, target
 
 class BaseTrainer:
     def __init__(self, 
