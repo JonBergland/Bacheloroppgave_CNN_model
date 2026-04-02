@@ -48,6 +48,7 @@ class BaseTrainer:
         self.dataset_is_preprocessed = dataset_is_preprocessed
 
         self.device_type = "cuda" if torch.cuda.is_available() else "cpu"
+        print(f"Device type: {self.device_type}")
         self.device = torch.device(self.device_type)
 
         self.generator = torch.Generator().manual_seed(manual_seed)

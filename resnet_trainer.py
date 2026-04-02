@@ -106,6 +106,9 @@ class ResnetTrainer(BaseTrainer):
         best_val_acc = max(self.val_accuracies) if self.val_accuracies else 0.0
         print("Starting to train")
         for epoch in range(self.start_epoch, self.start_epoch + self.epochs):
+            if (epoch % 100 == 0):
+                print(f"Epoch {epoch}/{self.start_epoch+self.epochs}")
+
             running_loss = 0.0
             correct_train = 0
             total_train = 0
