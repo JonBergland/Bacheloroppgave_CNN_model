@@ -43,8 +43,9 @@ class BaseTrainer:
                  n_splits: int = 5,
                  holdout_test_ratio: float = 0.15,
                  stratified_kfold: bool = True,
-                 use_augmentation: bool = False,
-                 num_workers: int = 1):
+                 num_workers: int = 1,
+                 augment_train_split: bool = False,
+                 augment_test_split: bool = False):
 
         self.epochs = epochs
         self.batch_size = batch_size
@@ -57,19 +58,22 @@ class BaseTrainer:
         self.stratified_kfold = stratified_kfold
         self.use_augmentation = use_augmentation
         self.num_workers = num_workers
+        self.dataset_root = dataset_root
+        self.augment_train_split = augment_train_split
+        self.augment_test_split = augment_test_split
 
         self.device_type = "cuda" if torch.cuda.is_available() else "cpu"
         self.device = torch.device(self.device_type)
 
         self.generator = torch.Generator().manual_seed(manual_seed)
 
-        self.base_dataset = torchvision.datasets.ImageFolder(root=dataset_root, transform=None)
+        self.data_augmentation = DataAugmentation(img_size=img_size, output_channels=output_channels)
+
+        self.base_dataset = torchvision.datasets.ImageFolder(root=dataset_root, transform=self.data_augmentation.getBaseTransform())
         self.dataset = self.base_dataset
+
         self.classes = self.base_dataset.classes
         self.targets = np.array(self.base_dataset.targets)
-
-        self.train_transform = self.make_train_transform(use_augmentation=use_augmentation)
-        self.eval_transform = self.make_eval_transform()
 
         self.trainloader: DataLoader | None = None
         self.valloader: DataLoader | None = None
@@ -108,15 +112,8 @@ class BaseTrainer:
         else:
             self._initialize_fixed_split()
 
-    def make_train_transform(self, use_augmentation: bool = False):
-        ops = [transforms.Resize((self.img_size, self.img_size))]
-        if use_augmentation:
-            ops.extend([
-                v2.RandomHorizontalFlip(),
-                v2.RandomRotation(10),
-                # Scale
-                # Flytting
-            ])
+    def make_train_transform(self):
+        ops = [v2.Resize((self.img_size, self.img_size))]
         ops.extend([
             v2.Grayscale(num_output_channels=self.output_channels),
             v2.ToTensor(),
@@ -143,9 +140,13 @@ class BaseTrainer:
         self.val_indices = indices[train_size:train_size + val_size]
         self.test_indices = indices[train_size + val_size:]
 
-        self.trainloader = self._build_loader(self.train_indices, self.train_transform, shuffle=True)
-        self.valloader = self._build_loader(self.val_indices, self.eval_transform, shuffle=False)
-        self.testloader = self._build_loader(self.test_indices, self.eval_transform, shuffle=False)
+        train_dataset = self._build_split_dataset(self.train_indices, augment=self.augment_train_split)
+        val_dataset = self._build_split_dataset(self.val_indices, augment=False)
+        test_dataset = self._build_split_dataset(self.test_indices, augment=self.augment_test_split)
+
+        self.trainloader = self._build_loader(train_dataset, shuffle=True)
+        self.valloader = self._build_loader(val_dataset, shuffle=False)
+        self.testloader = self._build_loader(test_dataset, shuffle=False)
 
     def _initialize_holdout_and_folds(self):
         n = len(self.base_dataset)
@@ -190,10 +191,34 @@ class BaseTrainer:
             self.fold_splits.append((fold_train, fold_val))
 
         self.set_fold(0)
-        self.testloader = self._build_loader(self.test_indices, self.eval_transform, shuffle=False)
+        test_dataset = self._build_split_dataset(self.test_indices, augment=self.augment_test_split)
+        self.testloader = self._build_loader(test_dataset, shuffle=False)
 
-    def _build_loader(self, indices: list[int], transform, shuffle: bool):
-        dataset = TransformSubset(self.base_dataset, indices=indices, transform=transform)
+    def _build_split_dataset(self, indices: list[int], augment: bool = False) -> Dataset:
+        datasets: list[Dataset] = [Subset(self.base_dataset, indices)]
+
+        if augment:
+            augmentation_transforms = self.data_augmentation.getDataAugmentations(
+                horizontal_flip=True,
+                vertical_flip=True,
+                translation=True,
+                blur=True,
+                color_jitter=True,
+                random_erasing=True,
+            )
+
+            for transform in augmentation_transforms:
+                augmented_dataset = torchvision.datasets.ImageFolder(
+                    root=self.dataset_root,
+                    transform=transform,
+                )
+                datasets.append(Subset(augmented_dataset, indices))
+
+        if len(datasets) == 1:
+            return datasets[0]
+        return ConcatDataset(datasets)
+
+    def _build_loader(self, dataset: Dataset, shuffle: bool):
         return DataLoader(
             dataset,
             batch_size=self.batch_size,
@@ -211,8 +236,10 @@ class BaseTrainer:
 
         self.current_fold = fold_index
         self.train_indices, self.val_indices = self.fold_splits[fold_index]
-        self.trainloader = self._build_loader(self.train_indices, self.train_transform, shuffle=True)
-        self.valloader = self._build_loader(self.val_indices, self.eval_transform, shuffle=False)
+        train_dataset = self._build_split_dataset(self.train_indices, augment=self.augment_train_split)
+        val_dataset = self._build_split_dataset(self.val_indices, augment=self.augment_test_split)
+        self.trainloader = self._build_loader(train_dataset, shuffle=True)
+        self.valloader = self._build_loader(val_dataset, shuffle=False)
 
     def iter_folds(self) -> Iterator[tuple[int, list[int], list[int]]]:
         for fold_index, (train_indices, val_indices) in enumerate(self.fold_splits):
@@ -224,7 +251,8 @@ class BaseTrainer:
     def build_holdout_trainval_loader(self, shuffle: bool = True):
         if not self.trainval_indices:
             raise RuntimeError("No trainval split is available. Set use_kfold=True.")
-        return self._build_loader(self.trainval_indices, self.train_transform, shuffle=shuffle)
+        trainval_dataset = self._build_split_dataset(self.trainval_indices, augment=self.augment_train_split)
+        return self._build_loader(trainval_dataset, shuffle=shuffle)
 
 
     def save_model(self, model: nn.Module , path: str | None = None, save_optimizer: bool = False):
