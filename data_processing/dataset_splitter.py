@@ -9,30 +9,6 @@ from data_processing.data_augmentation import DataAugmentation
 from data_processing.dataset_loader import DatasetLoader
 
 
-class SubsetWithTransform(Subset):
-    """
-    A Subset that applies a custom transform without modifying the underlying dataset.
-    This avoids the issue of multiple subsets sharing the same transform.
-    """
-    
-    def __init__(self, dataset, indices, transform=None):
-        super().__init__(dataset, indices)
-        self.transform = transform
-    
-    def __getitem__(self, idx):
-        # Get the item from the underlying dataset (will apply its default transform)
-        x, y = super().__getitem__(idx)
-        
-        # If this subset has a custom transform, apply it instead
-        if self.transform is not None:
-            # Get the raw image from the underlying dataset (without its transform)
-            raw_x = self.dataset[self.indices[idx]][0]
-            # Apply our custom transform
-            x = self.transform(raw_x)
-        
-        return x, y
-
-
 class DatasetSplitter:
     """
     Splits a dataset into train/test and optionally applies augmentations
