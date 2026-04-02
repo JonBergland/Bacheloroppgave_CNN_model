@@ -27,10 +27,10 @@ class DataAugmentation:
 
     def _compose_pipeline(self, transforms: list | None = None):
         transforms = transforms or []
-        return v2.Compose(self._preprocessed_ops() + transforms + self._end_ops())
+        return v2.Compose(transforms + self._end_ops())
 
     def getBaseTransform(self):
-        return self._compose_pipeline()
+        return v2.Compose(self._preprocessed_ops() + self._end_ops())
 
     def getDataAugmentations(
         self,
@@ -70,7 +70,9 @@ class DataAugmentation:
             )
 
         if random_erasing:
-            transforms.append(self._compose_pipeline([v2.RandomErasing(p=1.0, scale=(0.02, 0.2), ratio=(0.3, 3.3))]))
-
+            transforms.append(v2.Compose(
+                self.toTensor(),
+                v2.RandomErasing(p=1.0, scale=(0.02, 0.2), ratio=(0.3, 3.3)),
+                 v2.Normalize(mean=[0.449], std=[0.226])
+            ))        
         return transforms
-
