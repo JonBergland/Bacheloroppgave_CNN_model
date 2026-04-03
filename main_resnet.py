@@ -29,7 +29,7 @@ def objective(trial: optuna.Trial,):
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, model_name)
 
-    epochs = 30
+    epochs = 20
     batch_size = 64
     img_size = 64
     manual_seed = 42
