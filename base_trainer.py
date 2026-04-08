@@ -301,21 +301,26 @@ class BaseTrainer:
         import matplotlib.pyplot as plt
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
 
-        epochs_range = range(1, len(self.train_accuracies) + 1)
+        train_acc_epochs = range(1, len(self.train_accuracies) + 1)
+        val_acc_epochs = range(1, len(self.val_accuracies) + 1)
+        train_loss_epochs = range(1, len(self.train_losses) + 1)
+        val_loss_epochs = range(1, len(self.val_losses) + 1)
 
-        ax1.plot(epochs_range, self.train_accuracies, label='Train Accuracy', marker='o')
-        ax1.plot(epochs_range, self.val_accuracies, label='Validation Accuracy', marker='o')
+        ax1.plot(train_acc_epochs, self.train_accuracies, label='Train Accuracy', marker='o')
+        if self.val_accuracies:
+            ax1.plot(val_acc_epochs, self.val_accuracies, label='Validation Accuracy', marker='o')
         ax1.set_xlabel('Epoch')
         ax1.set_ylabel('Accuracy (%)')
-        ax1.set_title('Training vs Validation Accuracy')
+        ax1.set_title('Training and/or Validation Accuracy')
         ax1.legend()
         ax1.grid(True)
 
-        ax2.plot(epochs_range, self.train_losses, label='Training Loss', marker='o')
-        ax2.plot(epochs_range, self.val_losses, label='Validation Loss', marker='o')
+        ax2.plot(train_loss_epochs, self.train_losses, label='Training Loss', marker='o')
+        if self.val_losses:
+            ax2.plot(val_loss_epochs, self.val_losses, label='Validation Loss', marker='o')
         ax2.set_xlabel('Epoch')
         ax2.set_ylabel('Loss')
-        ax2.set_title('Training vs Validation Loss')
+        ax2.set_title('Training and Validation Loss')
         ax2.legend()
         ax2.grid(True)
 
