@@ -208,28 +208,97 @@ def main(dataset_root: str,
 
 
 if __name__ == '__main__':
-    study_name = "ResNet Hyperparameter Study"
-    storage_name = "sqlite:///{}.db".format(study_name)
-    directions = [StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE]
-    sampler = _create_sampler(seed=42)
+    # study_name = "ResNet Hyperparameter Study"
+    # storage_name = "sqlite:///{}.db".format(study_name)
+    # directions = [StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE]
+    # sampler = _create_sampler(seed=42)
 
-    study = optuna.create_study(
-        study_name=study_name,
-        sampler=sampler,
-        storage=storage_name,
-        load_if_exists=True,
-        directions=directions
-    )
+    # study = optuna.create_study(
+    #     study_name=study_name,
+    #     sampler=sampler,
+    #     storage=storage_name,
+    #     load_if_exists=True,
+    #     directions=directions
+    # )
 
     # run_server(storage_name)
 
-    for _ in range(30):
-        study.optimize(objective, n_trials=1)
+    # for _ in range(0):
+    #     study.optimize(objective, n_trials=1)
 
     # Multi-objective studies expose best_trials (Pareto front), not best_value/best_params.
-    if study.best_trials:
-        best_trial = study.best_trials[0]
-        print(f"Best trial values: {best_trial.values} (params: {best_trial.params})")
-    else:
-        print("No completed trials yet.")
+
+    # for trial in study.best_trials:
+    #     print(f"{trial.values} wiht {trial.params}")
+    # if study.best_trials:
+    #     best_trial = study.best_trials[0]
+    #     print(f"Best trial values: {best_trial.values} (params: {best_trial.params})")
+    # else:
+    #     print("No completed trials yet.")
+
+    # Best params:
+    # droput_rate: 0.10
+    # label_smoothing: 0.00
+    # weight_decay: 8.25e-4
+    # lr_rate: 1.2e-3
+    # lr_step_size: 9
+    # lr_gamma: 0.1
+
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    root = os.path.join(BASE_DIR, "dataset_preprocessed")
+
+    model_name = "resnet_9_no_data_augmentation.pth"
+    save_dir = os.path.join(BASE_DIR, "saved_models")
+    os.makedirs(save_dir, exist_ok=True)
+    save_path = os.path.join(save_dir, model_name)
+
+    epochs = 30
+    batch_size = 64
+    img_size = 64
+    manual_seed = 42
+    only_see_metrics = False
+    use_kfold = False
+    n_splits = 5
+    test_ratio = 0.10
+    stratified_kfold = False
+    augment_train_split = False
+    augment_test_split = False
+    num_workers = 1
+
+    dropout_rate = 0.10
+    label_smoothing = 0.0
+    weight_decay = 8.25e-4
+    lr_rate = 1.2e-3
+    lr_step_size = 9
+    lr_gamma = 0.1
+    vit_depth = 6
+
+
+    mean_val, std_val = main(
+        dataset_root=root,
+        model_name=model_name,
+        epochs=epochs,
+        lr_rate=lr_rate,
+        batch_size=batch_size,
+        img_size=img_size,
+        manual_seed=manual_seed,
+        save_path=save_path,
+        only_see_metrics=only_see_metrics,
+        dropout_rate=dropout_rate,
+        label_smoothing=label_smoothing,
+        weight_decay=weight_decay,
+        lr_step_size=lr_step_size,
+        lr_gamma=lr_gamma,
+        use_kfold=use_kfold,
+        n_splits=n_splits,
+        test_ratio=test_ratio,
+        stratified_kfold=stratified_kfold,
+        augment_train_split=augment_train_split,
+        augment_test_split=augment_test_split,
+        num_workers=num_workers,
+        vit_depth=vit_depth,
+    )
+
+
+
 
