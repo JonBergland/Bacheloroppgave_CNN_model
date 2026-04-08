@@ -125,8 +125,8 @@ class BaseTrainer:
         test_size = int(self.test_ratio * n)
         test_size = max(1, min(test_size, n - 1))
 
-        self.test_indices = indices[:test_size].tolist()
-        self.train_indices = indices[test_size:].tolist()
+        self.test_indices = indices[:test_size]
+        self.train_indices = indices[test_size:]
 
         train_dataset = self._build_split_dataset(self.train_indices, augment=self.augment_train_split)
         test_dataset = self._build_split_dataset(self.test_indices, augment=self.augment_test_split)
