@@ -124,21 +124,15 @@ class BaseTrainer:
 
         test_size = int(self.test_ratio * n)
         test_size = max(1, min(test_size, n - 1))
-        train_size = int(0.7 * n)
-        val_size = int(0.15 * n)
 
         self.test_indices = indices[:test_size].tolist()
         self.train_indices = indices[test_size:].tolist()
 
-        # self.val_indices = indices[train_size:train_size + val_size]
-        # self.test_indices = indices[train_size + val_size:]
-
         train_dataset = self._build_split_dataset(self.train_indices, augment=self.augment_train_split)
-        val_dataset = self._build_split_dataset(self.val_indices, augment=False)
         test_dataset = self._build_split_dataset(self.test_indices, augment=self.augment_test_split)
 
         self.trainloader = self._build_loader(train_dataset, shuffle=True)
-        self.valloader = self._build_loader(val_dataset, shuffle=False)
+        self.valloader = None
         self.testloader = self._build_loader(test_dataset, shuffle=False)
 
     def _initialize_holdout_and_folds(self):

@@ -117,7 +117,7 @@ class VisionTransformerTrainer(BaseTrainer):
             correct_train = 0
             total_train = 0
 
-            for inputs, labels in self.trainloader:
+            for batch_idx, (inputs, labels) in enumerate(self.trainloader):
                 inputs, labels = inputs.to(self.device), labels.to(self.device)
 
                 self.optimizer.zero_grad(set_to_none=True)
@@ -145,24 +145,23 @@ class VisionTransformerTrainer(BaseTrainer):
 
             avg_loss = running_loss / len(self.trainloader)
             train_acc = 100 * correct_train / total_train
-            val_acc = self.validate()
-
-            if val_acc > best_val_acc:
-                best_val_acc = val_acc
-                # Removing saving when hyperparameter searching
-                # self.save_model(model=self.model, save_optimizer=True) 
-                print(f"New best model saved with Validation Accuracy: {val_acc:.2f}%")
+            val_acc = None
+            if self.valloader is not None:
+                val_acc = self.validate()
 
             self.train_losses.append(avg_loss)
             self.train_accuracies.append(train_acc)
-            self.val_accuracies.append(val_acc)
+            if val_acc is not None:
+                self.val_accuracies.append(val_acc)
 
-            print(
+            status = (
                 f"Epoch [{epoch+1}/{self.start_epoch + self.epochs}] "
                 f"Loss: {avg_loss:.4f} "
-                f"Train Acc: {train_acc:.2f}% "
-                f"Val Acc: {val_acc:.2f}%"
+                f"Train Acc: {train_acc:.2f}%"
             )
+            if val_acc is not None:
+                status += f" Val Acc: {val_acc:.2f}%"
+            print(status)
 
     def validate(self):
         self.model.eval()
