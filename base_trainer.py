@@ -39,7 +39,7 @@ class BaseTrainer:
         self.output_channels = output_channels
         self.use_kfold = use_kfold
         self.n_splits = n_splits
-        self.holdout_test_ratio = test_ratio
+        self.test_ratio = test_ratio
         self.stratified_kfold = stratified_kfold
         self.num_workers = num_workers
         self.dataset_root = dataset_root
@@ -122,12 +122,16 @@ class BaseTrainer:
         n = len(self.base_dataset)
         indices = torch.randperm(n, generator=self.generator).tolist()
 
+        test_size = int(self.test_ratio * n)
+        test_size = max(1, min(test_size, n - 1))
         train_size = int(0.7 * n)
         val_size = int(0.15 * n)
 
-        self.train_indices = indices[:train_size]
-        self.val_indices = indices[train_size:train_size + val_size]
-        self.test_indices = indices[train_size + val_size:]
+        self.test_indices = indices[:test_size].tolist()
+        self.train_indices = indices[test_size:].tolist()
+
+        # self.val_indices = indices[train_size:train_size + val_size]
+        # self.test_indices = indices[train_size + val_size:]
 
         train_dataset = self._build_split_dataset(self.train_indices, augment=self.augment_train_split)
         val_dataset = self._build_split_dataset(self.val_indices, augment=False)
@@ -144,7 +148,7 @@ class BaseTrainer:
         rng = np.random.default_rng(self.manual_seed)
         rng.shuffle(indices)
 
-        test_size = int(self.holdout_test_ratio * n)
+        test_size = int(self.test_ratio * n)
         test_size = max(1, min(test_size, n - 1))
 
         self.test_indices = indices[:test_size].tolist()
