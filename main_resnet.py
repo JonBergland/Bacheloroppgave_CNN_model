@@ -274,7 +274,7 @@ if __name__ == '__main__':
     vit_depth = 6
 
 
-    mean_val, std_val = main(
+    main(
         dataset_root=root,
         model_name=model_name,
         epochs=epochs,

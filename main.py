@@ -208,18 +208,18 @@ def main(dataset_root: str,
 
 
 if __name__ == '__main__':
-    study_name = "ViT Hyperparameter Study"
-    storage_name = "sqlite:///{}.db".format(study_name)
-    directions = [StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE]
-    sampler = _create_sampler(seed=42)
+    # study_name = "ViT Hyperparameter Study"
+    # storage_name = "sqlite:///{}.db".format(study_name)
+    # directions = [StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE]
+    # sampler = _create_sampler(seed=42)
 
-    study = optuna.create_study(
-        study_name=study_name,
-        sampler=sampler,
-        storage=storage_name,
-        load_if_exists=True,
-        directions=directions
-    )
+    # study = optuna.create_study(
+    #     study_name=study_name,
+    #     sampler=sampler,
+    #     storage=storage_name,
+    #     load_if_exists=True,
+    #     directions=directions
+    # )
 
     # run_server(storage_name)
 
@@ -272,7 +272,7 @@ if __name__ == '__main__':
     vit_depth = 6
 
 
-    mean_val, std_val = main(
+    main(
         dataset_root=root,
         model_name=model_name,
         epochs=epochs,
