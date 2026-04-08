@@ -190,6 +190,7 @@ class VisionTransformerTrainer(BaseTrainer):
     def evaluate(self):
         correct = 0
         total = 0
+        running_test_loss = 0.0
         with torch.no_grad():
             for data in self.testloader:
                 images, labels = data
@@ -199,12 +200,15 @@ class VisionTransformerTrainer(BaseTrainer):
 
 
                 outputs = self.model(images)
+                loss = self.criterion(outputs, labels)
+                running_test_loss += loss.item()
                 _, predicted = torch.max(outputs.data, 1)
                 total += labels.size(0)
                 correct += (predicted == labels).sum().item()
 
-            self.test_accuracy = 100 * correct / total
-            print('Test image accuracy: %d %%' % (self.test_accuracy))
+        self.test_accuracy = 100 * correct / total
+        self.test_loss = running_test_loss / len(self.testloader)
+        print('Test image accuracy: %d %%' % (self.test_accuracy))
         
     def clear_model(self):
         self.model = None

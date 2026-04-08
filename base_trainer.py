@@ -80,6 +80,7 @@ class BaseTrainer:
         self.train_accuracies = []
         self.val_accuracies = []
         self.test_accuracy: float | None = None
+        self.test_loss: float | None = None
         self.start_epoch = 0
 
         if save_path is None:
@@ -253,6 +254,7 @@ class BaseTrainer:
             "train_accuracies": self.train_accuracies,
             "val_accuracies": self.val_accuracies,
             "test_accuracy": self.test_accuracy,
+            "test_loss": self.test_loss,
             "epoch": len(self.train_accuracies)
         }
         if save_optimizer:
@@ -288,6 +290,7 @@ class BaseTrainer:
             self.train_accuracies = checkpoint.get("train_accuracies", [])
             self.val_accuracies = checkpoint.get("val_accuracies", [])
             self.test_accuracy = checkpoint.get("test_accuracy", None)
+            self.test_loss = checkpoint.get("test_loss", None)
             self.start_epoch = checkpoint.get("epoch", 0)
 
             print(f"Model loaded from {path}")
@@ -332,6 +335,17 @@ class BaseTrainer:
         ax2.plot(train_loss_epochs, self.train_losses, label='Training Loss', marker='o')
         if self.val_losses:
             ax2.plot(val_loss_epochs, self.val_losses, label='Validation Loss', marker='o')
+        if self.test_loss is not None:
+            test_epoch = (len(self.train_losses) + 1) if self.train_losses else 1
+            ax2.scatter(
+                [test_epoch],
+                [self.test_loss],
+                label=f'Test Loss ({self.test_loss:.4f})',
+                marker='*',
+                s=160,
+                color='red',
+                zorder=5,
+            )
         ax2.set_xlabel('Epoch')
         ax2.set_ylabel('Loss')
         ax2.set_title('Training and Validation Loss')
