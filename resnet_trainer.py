@@ -212,8 +212,8 @@ class ResnetTrainer(BaseTrainer):
                 total += labels.size(0)
                 correct += (predicted == labels).sum().item()
 
-        print('Test image accuracy: %d %%' % (
-            100 * correct / total))
+            self.test_accuracy = 100 * correct / total
+            print('Test image accuracy: %d %%' % (self.test_accuracy))
 
 
     def clear_model(self):
