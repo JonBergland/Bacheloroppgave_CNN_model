@@ -35,7 +35,8 @@ class ResnetTrainer(BaseTrainer):
                  augment_train_split: bool = False,
                  augment_test_split: bool = False,
                  dataset_is_preprocessed: bool = True,
-                 depth: int = 6):
+                 depth: int = 6,
+                 patience: int = 10):
         super().__init__(
             dataset_root=dataset_root,
             model_name=model_name,
@@ -63,6 +64,8 @@ class ResnetTrainer(BaseTrainer):
         self.lr_step_size = lr_step_size
         self.lr_gamma = lr_gamma
         self.depth = depth
+        self.patience = patience
+        self.patience_counter = 0
 
         self._initialize_model_components()
 
@@ -98,6 +101,7 @@ class ResnetTrainer(BaseTrainer):
         self.train_accuracies = []
         self.val_accuracies = []
         self.start_epoch = 0
+        self.patience_counter = 0
         self._initialize_model_components()
 
     def train(self):
@@ -150,8 +154,14 @@ class ResnetTrainer(BaseTrainer):
 
                 if val_acc > best_val_acc:
                     best_val_acc = val_acc
+                    self.patience_counter = 0
                     self.save_model(model=self.model, save_optimizer=True)
                     print(f"New best model saved with Validation Accuracy: {val_acc:.2f}%")
+                else:
+                    self.patience_counter += 1
+                    if self.patience_counter >= self.patience:
+                        print(f"Early stopping triggered after {epoch + 1} epochs (patience={self.patience})")
+                        break
 
             self.train_losses.append(avg_loss)
             self.train_accuracies.append(train_acc)
@@ -164,7 +174,7 @@ class ResnetTrainer(BaseTrainer):
                 f"Train Acc: {train_acc:.2f}%"
             )
             if val_acc is not None:
-                status += f" Val Acc: {val_acc:.2f}%"
+                status += f" Val Acc: {val_acc:.2f}% (patience: {self.patience_counter}/{self.patience})"
             print(status)
 
     def validate(self):
@@ -195,6 +205,12 @@ class ResnetTrainer(BaseTrainer):
 
         accuracy = 100 * correct / total
         return accuracy
+
+    def restore_best_model(self):
+        """Restore the best model from the saved checkpoint after early stopping."""
+        if os.path.exists(self.save_path):
+            self.load_model(self.model, self.save_path)
+            print(f"Best model restored from {self.save_path}")
     
     def evaluate(self):
         correct = 0
