@@ -266,10 +266,12 @@ if __name__ == '__main__':
     dropout_rate = 0.48
     label_smoothing = 0.30
     weight_decay = 0.025
-    lr_rate = 1.2e-4
+    lr_rate = 1.66e-4
     lr_step_size = 7
-    lr_gamma = 0.1
+    lr_gamma = 0.41
     vit_depth = 6
+
+    #0.47 / 0.28 / 0.042 / 2.58e-4 / 7 / 0.47 / depth 6
 
 
     main(
