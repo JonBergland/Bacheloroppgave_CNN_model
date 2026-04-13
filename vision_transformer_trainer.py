@@ -32,7 +32,8 @@ class VisionTransformerTrainer(BaseTrainer):
                  augment_train_split: bool = False,
                  augment_test_split: bool = False,
                  dataset_is_preprocessed: bool = True,
-                 depth: int = 6):
+                 depth: int = 6,
+                 patience: int = 10):
         super().__init__(
             dataset_root=dataset_root,
             model_name=model_name,
@@ -59,6 +60,8 @@ class VisionTransformerTrainer(BaseTrainer):
         self.lr_rate = lr_rate
         self.lr_step_size = lr_step_size
         self.lr_gamma = lr_gamma
+        self.patience = patience
+        self.patience_counter = 0
 
         self._initialize_model_components(depth=depth)
 
@@ -68,8 +71,8 @@ class VisionTransformerTrainer(BaseTrainer):
             except Exception as e:
                 print(f"Warning: failed to load model from {self.save_path}: {e}")
 
-        
-        self.check_only_see_metrics(only_see_metrics)
+        if not self.use_kfold:
+            self.check_only_see_metrics(only_see_metrics)
 
     def _initialize_model_components(self, depth: int = 6):
         self.model = VisionTransformer(
@@ -105,6 +108,7 @@ class VisionTransformerTrainer(BaseTrainer):
         self.train_accuracies = []
         self.val_accuracies = []
         self.start_epoch = 0
+        self.patience_counter = 0
         self._initialize_model_components()
 
     def train(self):
@@ -154,14 +158,32 @@ class VisionTransformerTrainer(BaseTrainer):
             if val_acc is not None:
                 self.val_accuracies.append(val_acc)
 
+            if val_acc is not None:
+                if val_acc > best_val_acc:
+                    best_val_acc = val_acc
+                    self.patience_counter = 0
+                    self.save_model(model=self.model, save_optimizer=True)
+                    print(f"New best model saved with Validation Accuracy: {val_acc:.2f}%")
+                else:
+                    self.patience_counter += 1
+                    if self.patience_counter >= self.patience:
+                        print(f"Early stopping triggered after {epoch + 1} epochs (patience={self.patience})")
+                        break
+
             status = (
                 f"Epoch [{epoch+1}/{self.start_epoch + self.epochs}] "
                 f"Loss: {avg_loss:.4f} "
                 f"Train Acc: {train_acc:.2f}%"
             )
             if val_acc is not None:
-                status += f" Val Acc: {val_acc:.2f}%"
+                status += f" Val Acc: {val_acc:.2f}% (patience: {self.patience_counter}/{self.patience})"
             print(status)
+
+    def restore_best_model(self):
+        """Restore the best model from the saved checkpoint after early stopping."""
+        if os.path.exists(self.save_path):
+            self.load_model(self.model, self.save_path)
+            print(f"Best model restored from {self.save_path}")
 
     def validate(self):
         self.model.eval()
