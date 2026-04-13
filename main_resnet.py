@@ -259,7 +259,7 @@ if __name__ == '__main__':
     only_see_metrics = False
     use_kfold = False
     n_splits = 5
-    test_ratio = 0.10
+    test_ratio = 0.15
     stratified_kfold = False
     augment_train_split = False
     augment_test_split = True
