@@ -245,12 +245,12 @@ if __name__ == '__main__':
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     root = os.path.join(BASE_DIR, "dataset_preprocessed")
 
-    model_name = "vit_64_no_data_augmentation.pth"
+    model_name = "vit_64_test_data_augmentation.pth"
     save_dir = os.path.join(BASE_DIR, "saved_models")
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, model_name)
 
-    epochs = 30
+    epochs = 50
     batch_size = 64
     img_size = 64
     manual_seed = 42
@@ -260,18 +260,20 @@ if __name__ == '__main__':
     test_ratio = 0.10
     stratified_kfold = False
     augment_train_split = False
-    augment_test_split = False
+    augment_test_split = True
     num_workers = 1
 
-    dropout_rate = 0.48
+    dropout_rate = 0.5
     label_smoothing = 0.30
     weight_decay = 0.025
-    lr_rate = 1.66e-4
+    lr_rate = 2e-4
     lr_step_size = 7
-    lr_gamma = 0.41
+    lr_gamma = 0.5
     vit_depth = 6
 
+    #0.48 / 30.2 / 0.025 / 1.66e-4 / 7 / 0.41 / depth 6
     #0.47 / 0.28 / 0.042 / 2.58e-4 / 7 / 0.47 / depth 6
+    
 
 
     main(
