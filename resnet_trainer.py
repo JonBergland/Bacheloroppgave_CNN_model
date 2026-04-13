@@ -109,6 +109,7 @@ class ResnetTrainer(BaseTrainer):
         scaler = GradScaler() if use_amp else None
         best_val_acc = max(self.val_accuracies) if self.val_accuracies else 0.0
         print("Starting to train")
+
         for epoch in range(self.start_epoch, self.start_epoch + self.epochs):
             running_loss = 0.0
             correct_train = 0
@@ -149,9 +150,16 @@ class ResnetTrainer(BaseTrainer):
             avg_loss = running_loss / len(self.trainloader)
             train_acc = 100 * correct_train / total_train
             val_acc = None
+
             if self.valloader is not None:
                 val_acc = self.validate()
 
+            self.train_losses.append(avg_loss)
+            self.train_accuracies.append(train_acc)
+            if val_acc is not None:
+                self.val_accuracies.append(val_acc)
+
+            if val_acc is not None:
                 if val_acc > best_val_acc:
                     best_val_acc = val_acc
                     self.patience_counter = 0
@@ -162,11 +170,6 @@ class ResnetTrainer(BaseTrainer):
                     if self.patience_counter >= self.patience:
                         print(f"Early stopping triggered after {epoch + 1} epochs (patience={self.patience})")
                         break
-
-            self.train_losses.append(avg_loss)
-            self.train_accuracies.append(train_acc)
-            if val_acc is not None:
-                self.val_accuracies.append(val_acc)
 
             status = (
                 f"Epoch [{epoch+1}/{self.start_epoch + self.epochs}] "
