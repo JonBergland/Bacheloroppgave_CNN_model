@@ -1,4 +1,5 @@
 import os
+import csv
 import numpy as np
 from resnet_trainer import ResnetTrainer
 from vision_transformer_trainer import VisionTransformerTrainer
@@ -115,7 +116,8 @@ def main(dataset_root: str,
          augment_train_split: bool = False,
          augment_test_split: bool = False,
          num_workers: int = 1,
-         vit_depth: int = 6):
+         vit_depth: int = 6,
+         show_plots: bool = True):
 
     model_name_lower = model_name.lower()
     trainer_class = VisionTransformerTrainer if "vit" in model_name_lower else ResnetTrainer
@@ -202,10 +204,103 @@ def main(dataset_root: str,
         trainer.restore_best_model()
         trainer.evaluate()
 
-        trainer.save_model(model=trainer.model, save_optimizer=True)
-        trainer.clear_model()
+        result = {
+            "best_train_acc": max(trainer.train_accuracies) if trainer.train_accuracies else 0.0,
+            "best_val_acc": max(trainer.val_accuracies) if trainer.val_accuracies else 0.0,
+            "test_acc": trainer.test_accuracy if trainer.test_accuracy is not None else 0.0,
+            "test_loss": trainer.test_loss if trainer.test_loss is not None else float("nan"),
+        }
 
-        trainer.plot_metrics()
+        trainer.save_model(model=trainer.model, save_optimizer=True)
+        if show_plots:
+            trainer.plot_metrics()
+        trainer.clear_model()
+        return result
+
+
+def run_double_descent_depth_sweep(
+    dataset_root: str,
+    save_dir: str,
+    epochs: int = 80,
+    batch_size: int = 64,
+    img_size: int = 64,
+    manual_seed: int = 42,
+    lr_rate: float = 2e-4,
+    dropout_rate: float = 0.3,
+    label_smoothing: float = 0.10,
+    weight_decay: float = 0.05,
+    lr_step_size: int = 7,
+    lr_gamma: float = 0.5,
+    test_ratio: float = 0.10,
+    num_workers: int = 1,
+    depth_values: list[int] | None = None,
+):
+    depth_values = depth_values or [2, 3, 4, 6, 8, 10, 12]
+    csv_path = os.path.join(save_dir, "vit_double_descent_depth_sweep.csv")
+
+    rows = []
+    for depth in depth_values:
+        model_name = f"vit_dd_depth_{depth}.pth"
+        save_path = os.path.join(save_dir, model_name)
+
+        print(f"\n=== Double Descent Sweep | depth={depth} ===")
+        metrics = main(
+            dataset_root=dataset_root,
+            model_name=model_name,
+            epochs=epochs,
+            lr_rate=lr_rate,
+            batch_size=batch_size,
+            img_size=img_size,
+            manual_seed=manual_seed,
+            save_path=save_path,
+            only_see_metrics=False,
+            dropout_rate=dropout_rate,
+            label_smoothing=label_smoothing,
+            weight_decay=weight_decay,
+            lr_step_size=lr_step_size,
+            lr_gamma=lr_gamma,
+            use_kfold=False,
+            n_splits=5,
+            test_ratio=test_ratio,
+            stratified_kfold=True,
+            augment_train_split=True,
+            augment_test_split=False,
+            num_workers=num_workers,
+            vit_depth=depth,
+            show_plots=False,
+        )
+
+        train_val_gap = metrics["best_train_acc"] - metrics["best_val_acc"]
+        row = {
+            "depth": depth,
+            "best_train_acc": float(metrics["best_train_acc"]),
+            "best_val_acc": float(metrics["best_val_acc"]),
+            "test_acc": float(metrics["test_acc"]),
+            "test_loss": float(metrics["test_loss"]),
+            "train_val_gap": float(train_val_gap),
+        }
+        rows.append(row)
+        print(
+            "Depth={depth} | best_train={train:.2f}% | best_val={val:.2f}% | "
+            "test={test:.2f}% | gap={gap:.2f}%".format(
+                depth=depth,
+                train=row["best_train_acc"],
+                val=row["best_val_acc"],
+                test=row["test_acc"],
+                gap=row["train_val_gap"],
+            )
+        )
+
+    with open(csv_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(
+            f,
+            fieldnames=["depth", "best_train_acc", "best_val_acc", "test_acc", "test_loss", "train_val_gap"],
+        )
+        writer.writeheader()
+        writer.writerows(rows)
+
+    print(f"\nSaved double descent sweep results to: {csv_path}")
+    return rows
 
 
 if __name__ == '__main__':
@@ -261,7 +356,7 @@ if __name__ == '__main__':
     test_ratio = 0.10
     stratified_kfold = False
     augment_train_split = False
-    augment_test_split = True
+    augment_test_split = False
     num_workers = 1
 
     dropout_rate = 0.5
@@ -275,9 +370,28 @@ if __name__ == '__main__':
     #0.48 / 30.2 / 0.025 / 1.66e-4 / 7 / 0.41 / depth 6
     #0.47 / 0.28 / 0.042 / 2.58e-4 / 7 / 0.47 / depth 6
     
+    run_double_descent = True
 
-
-    main(
+    if run_double_descent:
+        run_double_descent_depth_sweep(
+            dataset_root=root,
+            save_dir=save_dir,
+            epochs=80,
+            batch_size=batch_size,
+            img_size=img_size,
+            manual_seed=manual_seed,
+            lr_rate=lr_rate,
+            dropout_rate=dropout_rate,
+            label_smoothing=label_smoothing,
+            weight_decay=weight_decay,
+            lr_step_size=lr_step_size,
+            lr_gamma=lr_gamma,
+            test_ratio=test_ratio,
+            num_workers=num_workers,
+            depth_values=[2, 3, 4, 6, 8, 10, 12],
+        )
+    else:
+        main(
         dataset_root=root,
         model_name=model_name,
         epochs=epochs,
@@ -300,6 +414,7 @@ if __name__ == '__main__':
         augment_test_split=augment_test_split,
         num_workers=num_workers,
         vit_depth=vit_depth,
+        show_plots=True,
     )
 
 
