@@ -33,7 +33,7 @@ class VisionTransformerTrainer(BaseTrainer):
                  augment_test_split: bool = False,
                  dataset_is_preprocessed: bool = True,
                  depth: int = 6,
-                 patience: int = 10):
+                 patience: int = 25):
         super().__init__(
             dataset_root=dataset_root,
             model_name=model_name,

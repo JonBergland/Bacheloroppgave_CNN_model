@@ -29,7 +29,7 @@ def objective(trial: optuna.Trial,):
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, model_name)
 
-    epochs = 30
+    epochs = 50
     batch_size = 64
     img_size = 64
     manual_seed = 42
@@ -255,7 +255,7 @@ if __name__ == '__main__':
     batch_size = 64
     img_size = 64
     manual_seed = 42
-    only_see_metrics = False
+    only_see_metrics = True
     use_kfold = False
     n_splits = 5
     test_ratio = 0.10
