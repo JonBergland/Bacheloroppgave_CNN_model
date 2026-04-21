@@ -60,12 +60,13 @@ class VisionTransformerTrainer(BaseTrainer):
         self.lr_rate = lr_rate
         self.lr_step_size = lr_step_size
         self.lr_gamma = lr_gamma
+        self.depth = depth
         self.patience = patience
         self.patience_counter = 0
 
         self._initialize_model_components(depth=depth)
 
-        if (not self.use_kfold) and os.path.exists(self.save_path):
+        if (not self.use_kfold) and only_see_metrics and os.path.exists(self.save_path):
             try:
                 self.load_model(self.model, self.save_path)
             except Exception as e:
@@ -96,10 +97,10 @@ class VisionTransformerTrainer(BaseTrainer):
             weight_decay=self.weight_decay,
         )
 
-        self.scheduler = torch.optim.lr_scheduler.StepLR(
+        self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
             self.optimizer,
-            step_size=self.lr_step_size,
-            gamma=self.lr_gamma,
+            T_max=max(1, self.epochs),
+            eta_min=max(1e-6, self.lr_rate * 0.05),
         )
 
     def reset_for_new_fold(self):
@@ -109,7 +110,7 @@ class VisionTransformerTrainer(BaseTrainer):
         self.val_accuracies = []
         self.start_epoch = 0
         self.patience_counter = 0
-        self._initialize_model_components()
+        self._initialize_model_components(depth=self.depth)
 
     def train(self):
         best_val_acc = max(self.val_accuracies) if self.val_accuracies else 0.0
