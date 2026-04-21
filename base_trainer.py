@@ -6,7 +6,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torchvision
-from sklearn.model_selection import KFold, StratifiedKFold
+from sklearn.model_selection import KFold, StratifiedKFold, train_test_split
 from torch.utils.data import DataLoader, Dataset, ConcatDataset, Subset
 from torchvision.transforms import v2
 
@@ -124,16 +124,38 @@ class BaseTrainer:
         n = len(self.base_dataset)
         indices = torch.randperm(n, generator=self.generator).tolist()
 
-        test_size = int(self.test_ratio * n)
-        test_size = max(1, min(test_size, n - 1))
+        indices = np.arange(n)
+        targets = self.targets
 
         val_ratio = 0.15
-        val_size = int(val_ratio * n)
-        train_size = int((1-0.15-self.test_ratio)*n)
+        test_ratio = float(self.test_ratio)
+        if test_ratio <= 0 or test_ratio >= 1:
+            raise ValueError("test_ratio must be in (0, 1)")
+        if val_ratio + test_ratio >= 1:
+            raise ValueError("val_ratio + test_ratio must be less than 1")
 
-        self.train_indices = indices[:train_size]
-        self.val_indices = indices[train_size:train_size + val_size]
-        self.test_indices = indices[train_size + val_size:]
+        stratify_all = targets if self.stratified_kfold else None
+        trainval_indices, test_indices = train_test_split(
+            indices,
+            test_size=test_ratio,
+            random_state=self.manual_seed,
+            shuffle=True,
+            stratify=stratify_all,
+        )
+
+        val_fraction_of_trainval = val_ratio / (1.0 - test_ratio)
+        stratify_trainval = targets[trainval_indices] if self.stratified_kfold else None
+        train_indices, val_indices = train_test_split(
+            trainval_indices,
+            test_size=val_fraction_of_trainval,
+            random_state=self.manual_seed,
+            shuffle=True,
+            stratify=stratify_trainval,
+        )
+
+        self.train_indices = train_indices.tolist()
+        self.val_indices = val_indices.tolist()
+        self.test_indices = test_indices.tolist()
 
         train_dataset = self._build_split_dataset(self.train_indices, augment=self.augment_train_split)
         val_dataset = self._build_split_dataset(self.val_indices, augment=False)
@@ -232,7 +254,7 @@ class BaseTrainer:
         self.current_fold = fold_index
         self.train_indices, self.val_indices = self.fold_splits[fold_index]
         train_dataset = self._build_split_dataset(self.train_indices, augment=self.augment_train_split)
-        val_dataset = self._build_split_dataset(self.val_indices, augment=self.augment_test_split)
+        val_dataset = self._build_split_dataset(self.val_indices, augment=False)
         self.trainloader = self._build_loader(train_dataset, shuffle=True)
         self.valloader = self._build_loader(val_dataset, shuffle=False)
 

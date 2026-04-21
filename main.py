@@ -255,7 +255,7 @@ if __name__ == '__main__':
     batch_size = 64
     img_size = 64
     manual_seed = 42
-    only_see_metrics = True
+    only_see_metrics = False
     use_kfold = False
     n_splits = 5
     test_ratio = 0.10
