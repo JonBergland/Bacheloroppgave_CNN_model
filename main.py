@@ -199,6 +199,7 @@ def main(dataset_root: str,
         return mean_val, std_val
     else:
         trainer.train()
+        trainer.restore_best_model()
         trainer.evaluate()
 
         trainer.save_model(model=trainer.model, save_optimizer=True)
@@ -264,7 +265,7 @@ if __name__ == '__main__':
     num_workers = 1
 
     dropout_rate = 0.5
-    label_smoothing = 0.30
+    label_smoothing = 0.10
     weight_decay = 0.025
     lr_rate = 2e-4
     lr_step_size = 7
