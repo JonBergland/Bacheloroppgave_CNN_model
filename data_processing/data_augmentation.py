@@ -46,12 +46,12 @@ class DataAugmentation:
         vertical_flip: bool = False,
         translation: bool = False,
         blur: bool = False,
-        color_jitter: bool = False,
         random_erasing: bool = False,
         preprocessed_input: bool = True,
+        noise: bool = False,
+        scale: bool = False
     ):
         transforms = []
-
         if horizontal_flip:
             transforms.append(self._compose_pipeline([v2.RandomHorizontalFlip(p=1.0)], preprocessed_input=preprocessed_input))
 
@@ -64,21 +64,6 @@ class DataAugmentation:
         if blur:
             transforms.append(self._compose_pipeline([v2.GaussianBlur(kernel_size=3, sigma=(0.1, 2.0))], preprocessed_input=preprocessed_input))
 
-        if color_jitter:
-            transforms.append(
-                self._compose_pipeline(
-                    [
-                        v2.ColorJitter(
-                            brightness=0.2,
-                            contrast=0.2,
-                            saturation=0.0,
-                            hue=0.0,
-                        )
-                    ],
-                    preprocessed_input=preprocessed_input,
-                )
-            )
-
         if random_erasing:
             erasing_ops = self._preprocessed_ops() if preprocessed_input else self._not_preprocessed_ops()
             erasing_ops.extend([
@@ -87,4 +72,26 @@ class DataAugmentation:
                 v2.Normalize(mean=[0.449], std=[0.226]),
             ])
             transforms.append(v2.Compose(erasing_ops))
+
+        if noise:
+            noise_ops = self._preprocessed_ops() if preprocessed_input else self._not_preprocessed_ops()
+            noise_ops.extend([
+                self.toTensor(),
+                v2.GaussianNoise(mean=0.0, sigma=0.05, clip=True),
+                v2.Normalize(mean=[0.449], std=[0.226]),
+            ])
+            transforms.append(v2.Compose(noise_ops))
+
+        if scale:
+            zoom_crop_size = max(1, int(self.img_size * 0.85))
+            transforms.append(
+                self._compose_pipeline(
+                    [
+                        v2.CenterCrop(zoom_crop_size),
+                        v2.Resize((self.img_size, self.img_size)),
+                    ],
+                    preprocessed_input=preprocessed_input,
+                )
+            )
+
         return transforms

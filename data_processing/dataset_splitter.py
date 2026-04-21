@@ -87,8 +87,9 @@ class DatasetSplitter:
                 vertical_flip=True,
                 translation=True,
                 blur=True,
-                color_jitter=True,
                 random_erasing=True,
+                noise=True,
+                scale=True
             )
 
             for transform in augmentation_transforms:

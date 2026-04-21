@@ -198,9 +198,10 @@ class BaseTrainer:
                 vertical_flip=True,
                 translation=True,
                 blur=True,
-                color_jitter=True,
                 random_erasing=True,
                 preprocessed_input=self.dataset_is_preprocessed,
+                noise=True,
+                scale=True
             )
 
             for transform in augmentation_transforms:

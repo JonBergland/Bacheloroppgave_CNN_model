@@ -39,8 +39,9 @@ class DatasetLoader:
                 vertical_flip=True,
                 translation=True,
                 blur=True,
-                color_jitter=True,
                 random_erasing=True,
+                noise=True,
+                scale=True
             )
         else:
             return self.data_augmentation.getDataAugmentations()
