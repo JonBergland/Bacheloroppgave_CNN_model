@@ -263,7 +263,7 @@ def run_double_descent_depth_sweep(
             n_splits=5,
             test_ratio=test_ratio,
             stratified_kfold=True,
-            augment_train_split=True,
+            augment_train_split=False,
             augment_test_split=False,
             num_workers=num_workers,
             vit_depth=depth,
@@ -369,8 +369,26 @@ if __name__ == '__main__':
 
     #0.48 / 30.2 / 0.025 / 1.66e-4 / 7 / 0.41 / depth 6
     #0.47 / 0.28 / 0.042 / 2.58e-4 / 7 / 0.47 / depth 6
+
+    # Show transformations
+    # from data_processing.data_augmentation import DataAugmentation
+
+    # aug = DataAugmentation(img_size=64, output_channels=1)
+    # aug.showAugmentedSamples(
+    # image_path="dataset_preprocessed/banana/0000.jpg",
+    # horizontal_flip=True,
+    # vertical_flip=True,
+    # translation=True,
+    # blur=True,
+    # random_erasing=True,
+    # noise=True,
+    # scale=True,
+    # preprocessed_input=True,
+    # include_base=True,
+    # )
+
     
-    run_double_descent = True
+    run_double_descent = False
 
     if run_double_descent:
         run_double_descent_depth_sweep(

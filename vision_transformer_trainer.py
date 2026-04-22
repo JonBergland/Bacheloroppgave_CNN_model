@@ -139,7 +139,7 @@ class VisionTransformerTrainer(BaseTrainer):
                 correct_train += (preds == labels).sum().item()
                 total_train += labels.size(0)
 
-                if batch_idx % 1 == 0:
+                if batch_idx % 20 == 0:
                     print(
                         f"Epoch {epoch + 1}/{self.start_epoch + self.epochs} | "
                         f"Batch {batch_idx + 1}/{len(self.trainloader)} | "
