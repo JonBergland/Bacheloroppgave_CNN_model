@@ -5,12 +5,12 @@ from typing import Iterator
 import numpy as np
 import torch
 import torch.nn as nn
-import torchvision
-from sklearn.model_selection import KFold, StratifiedKFold, train_test_split
-from torch.utils.data import DataLoader, Dataset, ConcatDataset, Subset
+from torch.utils.data import DataLoader, Dataset
 from torchvision.transforms import v2
 
 from data_processing.data_augmentation import DataAugmentation
+from data_processing.data_transforms import DEFAULT_SPLIT_TRANSFORMS
+from data_processing.dataset_splitter import DatasetSplitter
 
 class BaseTrainer:
     def __init__(self, 
@@ -53,16 +53,28 @@ class BaseTrainer:
 
         self.generator = torch.Generator().manual_seed(manual_seed)
 
+        self.split_transform_options = copy.deepcopy(DEFAULT_SPLIT_TRANSFORMS)
+
+        self.dataset_splitter = DatasetSplitter(
+            dataset_root=dataset_root,
+            img_size=img_size,
+            output_channels=output_channels,
+            test_ratio=test_ratio,
+            val_ratio=0.15,
+            manual_seed=manual_seed,
+            use_kfold=use_kfold,
+            n_splits=n_splits,
+            stratified_kfold=stratified_kfold,
+            dataset_is_preprocessed=dataset_is_preprocessed,
+        )
+
         self.data_augmentation = DataAugmentation(img_size=img_size, output_channels=output_channels)
 
-        self.base_dataset = torchvision.datasets.ImageFolder(
-            root=dataset_root,
-            transform=self.data_augmentation.getBaseTransform(preprocessed_input=dataset_is_preprocessed),
-        )
+        self.base_dataset = self.dataset_splitter.base_dataset
         self.dataset = self.base_dataset
 
-        self.classes = self.base_dataset.classes
-        self.targets = np.array(self.base_dataset.targets)
+        self.classes = self.dataset_splitter.classes
+        self.targets = np.array(self.dataset_splitter.targets)
 
         self.trainloader: DataLoader | None = None
         self.valloader: DataLoader | None = None
@@ -121,119 +133,42 @@ class BaseTrainer:
         ])
 
     def _initialize_fixed_split(self):
-        n = len(self.base_dataset)
-        indices = torch.randperm(n, generator=self.generator).tolist()
+        self.train_indices, self.val_indices, self.test_indices = self.dataset_splitter.get_train_val_test_indices()
 
-        indices = np.arange(n)
-        targets = self.targets
-
-        val_ratio = 0.15
-        test_ratio = float(self.test_ratio)
-        if test_ratio <= 0 or test_ratio >= 1:
-            raise ValueError("test_ratio must be in (0, 1)")
-        if val_ratio + test_ratio >= 1:
-            raise ValueError("val_ratio + test_ratio must be less than 1")
-
-        stratify_all = targets if self.stratified_kfold else None
-        trainval_indices, test_indices = train_test_split(
-            indices,
-            test_size=test_ratio,
-            random_state=self.manual_seed,
-            shuffle=True,
-            stratify=stratify_all,
+        train_dataset, val_dataset, test_dataset = self.dataset_splitter.get_train_val_test_datasets(
+            augment_train=self.augment_train_split,
+            augment_val=False,
+            augment_test=self.augment_test_split,
+            train_transform_options=self.split_transform_options["train"],
+            val_transform_options=self.split_transform_options["val"],
+            test_transform_options=self.split_transform_options["test"],
         )
-
-        val_fraction_of_trainval = val_ratio / (1.0 - test_ratio)
-        stratify_trainval = targets[trainval_indices] if self.stratified_kfold else None
-        train_indices, val_indices = train_test_split(
-            trainval_indices,
-            test_size=val_fraction_of_trainval,
-            random_state=self.manual_seed,
-            shuffle=True,
-            stratify=stratify_trainval,
-        )
-
-        self.train_indices = train_indices.tolist()
-        self.val_indices = val_indices.tolist()
-        self.test_indices = test_indices.tolist()
-
-        train_dataset = self._build_split_dataset(self.train_indices, augment=self.augment_train_split)
-        val_dataset = self._build_split_dataset(self.val_indices, augment=False)
-        test_dataset = self._build_split_dataset(self.test_indices, augment=self.augment_test_split)
 
         self.trainloader = self._build_loader(train_dataset, shuffle=True)
         self.valloader = self._build_loader(val_dataset, shuffle=False)
         self.testloader = self._build_loader(test_dataset, shuffle=False)
 
     def _initialize_holdout_and_folds(self):
-        n = len(self.base_dataset)
-        indices = np.arange(n)
-
-        rng = np.random.default_rng(self.manual_seed)
-        rng.shuffle(indices)
-
-        test_size = int(self.test_ratio * n)
-        test_size = max(1, min(test_size, n - 1))
-
-        self.test_indices = indices[:test_size].tolist()
-        self.trainval_indices = indices[test_size:].tolist()
-
-        if len(self.trainval_indices) < self.n_splits:
-            raise ValueError(
-                f"n_splits={self.n_splits} is too large for trainval size={len(self.trainval_indices)}"
-            )
-
-        trainval_array = np.array(self.trainval_indices)
-        trainval_targets = self.targets[trainval_array]
-
-        if self.stratified_kfold:
-            splitter = StratifiedKFold(
-                n_splits=self.n_splits,
-                shuffle=True,
-                random_state=self.manual_seed,
-            )
-            fold_iter = splitter.split(trainval_array, trainval_targets)
-        else:
-            splitter = KFold(
-                n_splits=self.n_splits,
-                shuffle=True,
-                random_state=self.manual_seed,
-            )
-            fold_iter = splitter.split(trainval_array)
-
-        self.fold_splits = []
-        for train_rel, val_rel in fold_iter:
-            fold_train = trainval_array[train_rel].tolist()
-            fold_val = trainval_array[val_rel].tolist()
-            self.fold_splits.append((fold_train, fold_val))
+        self.fold_splits = self.dataset_splitter.fold_splits
+        self.trainval_indices = self.dataset_splitter.trainval_indices
+        self.test_indices = self.dataset_splitter.test_indices
 
         self.set_fold(0)
-        test_dataset = self._build_split_dataset(self.test_indices, augment=self.augment_test_split)
+        test_dataset = self.dataset_splitter.build_split_dataset(
+            self.test_indices,
+            augment=self.augment_test_split,
+            transform_options=self.split_transform_options["test"],
+        )
         self.testloader = self._build_loader(test_dataset, shuffle=False)
 
-    def _build_split_dataset(self, indices: list[int], augment: bool = False) -> Dataset:
-        datasets: list[Dataset] = [Subset(self.base_dataset, indices)]
-
-        if augment:
-            augmentation_transforms = self.data_augmentation.getDataAugmentations(
-                horizontal_flip=True,
-                vertical_flip=True,
-                translation=True,
-                blur=True,
-                random_erasing=True,
-                preprocessed_input=self.dataset_is_preprocessed,
-                noise=True,
-                scale=True
-            )
-
-            for transform in augmentation_transforms:
-                augmented_dataset = copy.deepcopy(self.base_dataset)
-                augmented_dataset.transform = transform
-                datasets.append(Subset(augmented_dataset, indices))
-        print(f"Len Datasets: {len(datasets)}")
-        if len(datasets) == 1:
-            return datasets[0]
-        return ConcatDataset(datasets)
+    def _build_split_dataset(self, indices: list[int], augment: bool = False, split: str = "train") -> Dataset:
+        if split not in self.split_transform_options:
+            raise ValueError(f"Unknown split '{split}'. Expected one of {list(self.split_transform_options.keys())}.")
+        return self.dataset_splitter.build_split_dataset(
+            indices,
+            augment=augment,
+            transform_options=self.split_transform_options[split],
+        )
 
     def _build_loader(self, dataset: Dataset, shuffle: bool):
         return DataLoader(
@@ -246,15 +181,22 @@ class BaseTrainer:
         )
 
     def set_fold(self, fold_index: int):
-        if not self.fold_splits:
-            raise RuntimeError("No fold splits are available. Set use_kfold=True to use folds.")
-        if fold_index < 0 or fold_index >= len(self.fold_splits):
-            raise IndexError(f"fold_index must be in [0, {len(self.fold_splits) - 1}]")
+        self.dataset_splitter.set_fold(fold_index)
+        self.fold_splits = self.dataset_splitter.fold_splits
+        self.current_fold = self.dataset_splitter.current_fold
+        self.train_indices = self.dataset_splitter.train_indices
+        self.val_indices = self.dataset_splitter.val_indices
 
-        self.current_fold = fold_index
-        self.train_indices, self.val_indices = self.fold_splits[fold_index]
-        train_dataset = self._build_split_dataset(self.train_indices, augment=self.augment_train_split)
-        val_dataset = self._build_split_dataset(self.val_indices, augment=False)
+        train_dataset = self.dataset_splitter.build_split_dataset(
+            self.train_indices,
+            augment=self.augment_train_split,
+            transform_options=self.split_transform_options["train"],
+        )
+        val_dataset = self.dataset_splitter.build_split_dataset(
+            self.val_indices,
+            augment=False,
+            transform_options=self.split_transform_options["val"],
+        )
         self.trainloader = self._build_loader(train_dataset, shuffle=True)
         self.valloader = self._build_loader(val_dataset, shuffle=False)
 
@@ -268,7 +210,11 @@ class BaseTrainer:
     def build_holdout_trainval_loader(self, shuffle: bool = True):
         if not self.trainval_indices:
             raise RuntimeError("No trainval split is available. Set use_kfold=True.")
-        trainval_dataset = self._build_split_dataset(self.trainval_indices, augment=self.augment_train_split)
+        trainval_dataset = self.dataset_splitter.build_split_dataset(
+            self.trainval_indices,
+            augment=self.augment_train_split,
+            transform_options=self.split_transform_options["train"],
+        )
         return self._build_loader(trainval_dataset, shuffle=shuffle)
 
 
