@@ -137,7 +137,7 @@ class BaseTrainer:
 
         train_dataset, val_dataset, test_dataset = self.dataset_splitter.get_train_val_test_datasets(
             augment_train=self.augment_train_split,
-            augment_val=False,
+            augment_val=self.augment_test_split,
             augment_test=self.augment_test_split,
             train_transform_options=self.split_transform_options["train"],
             val_transform_options=self.split_transform_options["val"],
