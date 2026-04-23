@@ -117,7 +117,7 @@ def main(dataset_root: str,
          augment_test_split: bool = False,
          num_workers: int = 1,
          vit_depth: int = 6,
-         vit_embed_dim: int = 288,
+         vit_embed_dim: int = 240,
          show_plots: bool = True):
 
     model_name_lower = model_name.lower()
@@ -445,9 +445,9 @@ if __name__ == '__main__':
     use_kfold = False
     n_splits = 5
     test_ratio = 0.10
-    stratified_kfold = False
-    augment_train_split = False
-    augment_test_split = False
+    stratified_kfold = True
+    augment_train_split = True
+    augment_test_split = True
     num_workers = 1
 
     dropout_rate = 0.5
@@ -481,7 +481,7 @@ if __name__ == '__main__':
 
     
     run_double_descent = False
-    run_embed_dim_sweep_mode = True
+    run_embed_dim_sweep_mode = False
 
     if run_double_descent:
         run_double_descent_depth_sweep(
