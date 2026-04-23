@@ -33,6 +33,7 @@ class VisionTransformerTrainer(BaseTrainer):
                  augment_test_split: bool = False,
                  dataset_is_preprocessed: bool = True,
                  depth: int = 6,
+                 embed_dim: int = 288,
                  patience: int = 25):
         super().__init__(
             dataset_root=dataset_root,
@@ -61,6 +62,7 @@ class VisionTransformerTrainer(BaseTrainer):
         self.lr_step_size = lr_step_size
         self.lr_gamma = lr_gamma
         self.depth = depth
+        self.embed_dim = embed_dim
         self.patience = patience
         self.patience_counter = 0
 
@@ -76,14 +78,15 @@ class VisionTransformerTrainer(BaseTrainer):
             self.check_only_see_metrics(only_see_metrics)
 
     def _initialize_model_components(self, depth: int = 6):
+        mlp_dim = self.embed_dim * 3
         self.model = VisionTransformer(
             img_size=self.img_size,
             patch_size=8,
             num_classes=len(self.classes),
-            embed_dim=288,
+            embed_dim=self.embed_dim,
             num_heads=6,
             depth=depth,
-            mlp_dim=864,
+            mlp_dim=mlp_dim,
             in_channels=1,
             dropout=self.dropout_rate,
         )
