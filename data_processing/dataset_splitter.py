@@ -190,7 +190,7 @@ class DatasetSplitter:
             for transform in augmentation_transforms:
                 aug_subset = self._create_subset(indices, transform=transform)
                 datasets.append(aug_subset)
-
+        print(len(datasets))
         if len(datasets) == 1:
             return datasets[0]
         return ConcatDataset(datasets)
