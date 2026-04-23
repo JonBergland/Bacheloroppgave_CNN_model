@@ -205,6 +205,18 @@ class DatasetSplitter:
 
         return Subset(subset_dataset, indices)
 
+    def build_split_dataset(
+        self,
+        indices: list[int],
+        augment: bool = False,
+        transform_options: dict | None = None,
+    ) -> Dataset:
+        return self._apply_augmentations_to_split(
+            indices,
+            augment=augment,
+            transform_options=transform_options,
+        )
+
     def set_fold(self, fold_index: int):
         if not self.fold_splits:
             raise RuntimeError("No fold splits are available. Set use_kfold=True to use folds.")
