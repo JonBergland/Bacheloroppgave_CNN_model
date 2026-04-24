@@ -303,7 +303,7 @@ class BaseTrainer:
             )
         ax1.set_xlabel('Epoch')
         ax1.set_ylabel('Accuracy (%)')
-        ax1.set_title('Training and/or Validation Accuracy')
+        ax1.set_title('Training with flip, translation and scale. Validation and Test with Noise')
         ax1.legend()
         ax1.grid(True)
 
@@ -323,7 +323,7 @@ class BaseTrainer:
             )
         ax2.set_xlabel('Epoch')
         ax2.set_ylabel('Loss')
-        ax2.set_title('Training and Validation Loss')
+        ax2.set_title('Training, Validation and Test Loss')
         ax2.legend()
         ax2.grid(True)
 
