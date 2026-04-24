@@ -247,12 +247,12 @@ if __name__ == '__main__':
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     root = os.path.join(BASE_DIR, "dataset_preprocessed")
 
-    model_name = "resnet_9_test_data_augmentation.pth"
+    model_name = "resnet_9_data_augmentation.pth"
     save_dir = os.path.join(BASE_DIR, "saved_models")
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, model_name)
 
-    epochs = 30
+    epochs = 50
     batch_size = 64
     img_size = 64
     manual_seed = 42
@@ -261,7 +261,7 @@ if __name__ == '__main__':
     n_splits = 5
     test_ratio = 0.15
     stratified_kfold = False
-    augment_train_split = False
+    augment_train_split = True
     augment_test_split = True
     num_workers = 1
 
