@@ -9,7 +9,9 @@ DEFAULT_SPLIT_TRANSFORMS = {
 		"translation": True,
 		"blur": False,
 		"random_erasing": False,
-		"noise": True,
+		"noise_light": True,
+		"noise_medium": False,
+		"noise_strong": False,
 		"scale": True,
 	},
 	"val": {
@@ -18,7 +20,9 @@ DEFAULT_SPLIT_TRANSFORMS = {
 		"translation": False,
 		"blur": False,
 		"random_erasing": False,
-		"noise": True,
+		"noise_light": True,
+		"noise_medium": False,
+		"noise_strong": False,
 		"scale": False,
 	},
 	"test": {
@@ -27,7 +31,9 @@ DEFAULT_SPLIT_TRANSFORMS = {
 		"translation": False,
 		"blur": False,
 		"random_erasing": False,
-		"noise": True,
+		"noise_light": True,
+		"noise_medium": False,
+		"noise_strong": False,
 		"scale": False,
 	},
 }

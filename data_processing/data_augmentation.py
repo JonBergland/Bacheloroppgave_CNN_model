@@ -43,7 +43,9 @@ class DataAugmentation:
         blur: bool = False,
         random_erasing: bool = False,
         preprocessed_input: bool = True,
-        noise: bool = False,
+        noise_light: bool = False,
+        noise_medium: bool = False,
+        noise_strong: bool = False,
         scale: bool = False,
     ):
         named_transforms = []
@@ -92,14 +94,32 @@ class DataAugmentation:
             ])
             named_transforms.append(("random_erasing", v2.Compose(erasing_ops)))
 
-        if noise:
+        if noise_light:
             noise_ops = self._preprocessed_ops() if preprocessed_input else self._not_preprocessed_ops()
             noise_ops.extend([
                 self.toTensor(),
                 v2.GaussianNoise(mean=0.0, sigma=0.05, clip=True),
                 v2.Normalize(mean=[0.449], std=[0.226]),
             ])
-            named_transforms.append(("noise", v2.Compose(noise_ops)))
+            named_transforms.append(("noise_light", v2.Compose(noise_ops)))
+
+        if noise_medium:
+            noise_ops = self._preprocessed_ops() if preprocessed_input else self._not_preprocessed_ops()
+            noise_ops.extend([
+                self.toTensor(),
+                v2.GaussianNoise(mean=0.0, sigma=0.10, clip=True),
+                v2.Normalize(mean=[0.449], std=[0.226]),
+            ])
+            named_transforms.append(("noise_medium", v2.Compose(noise_ops)))
+
+        if noise_strong:
+            noise_ops = self._preprocessed_ops() if preprocessed_input else self._not_preprocessed_ops()
+            noise_ops.extend([
+                self.toTensor(),
+                v2.GaussianNoise(mean=0.0, sigma=0.15, clip=True),
+                v2.Normalize(mean=[0.449], std=[0.226]),
+            ])
+            named_transforms.append(("noise_strong", v2.Compose(noise_ops)))
 
         if scale:
             zoom_crop_size = max(1, int(self.img_size * 0.85))
@@ -142,7 +162,9 @@ class DataAugmentation:
         blur: bool = False,
         random_erasing: bool = False,
         preprocessed_input: bool = True,
-        noise: bool = False,
+        noise_light: bool = False,
+        noise_medium: bool = False,
+        noise_strong: bool = False,
         scale: bool = False
     ):
         named_transforms = self._build_named_augmentations(
@@ -152,7 +174,9 @@ class DataAugmentation:
             blur=blur,
             random_erasing=random_erasing,
             preprocessed_input=preprocessed_input,
-            noise=noise,
+            noise_light=noise_light,
+            noise_medium=noise_medium,
+            noise_strong=noise_strong,
             scale=scale,
         )
         return [transform for _, transform in named_transforms]
@@ -166,7 +190,9 @@ class DataAugmentation:
         blur: bool = True,
         random_erasing: bool = True,
         preprocessed_input: bool = True,
-        noise: bool = True,
+        noise_light: bool = True,
+        noise_medium: bool = False,
+        noise_strong: bool = False,
         scale: bool = True,
         include_base: bool = True,
     ):
@@ -187,7 +213,9 @@ class DataAugmentation:
             blur=blur,
             random_erasing=random_erasing,
             preprocessed_input=preprocessed_input,
-            noise=noise,
+            noise_light=noise_light,
+            noise_medium=noise_medium,
+            noise_strong=noise_strong,
             scale=scale,
         )
 
