@@ -1,6 +1,5 @@
-
-
 import copy
+import inspect
 import numpy as np
 from torch.utils.data import ConcatDataset, Dataset, Subset
 from sklearn.model_selection import KFold, StratifiedKFold, train_test_split
@@ -157,11 +156,11 @@ class DatasetSplitter:
     ) -> Dataset:
         """
         Apply augmentations to a dataset split.
-        
+
         Args:
             indices: list of indices for this split
             augment: whether to apply augmentations to this split
-        
+
         Returns:
             Dataset (either ImageFolder or ConcatDataset if augmentations applied)
         """
@@ -170,27 +169,30 @@ class DatasetSplitter:
         subset_dataset = self._create_subset(indices)
         datasets.append(subset_dataset)
 
-        should_augment = augment
-
-        if should_augment:
+        if augment:
             default_options = {
-                "horizontal_flip": True,
+                "horizontal_flip": False,
                 "vertical_flip": False,
-                "translation": True,
+                "translation": False,
                 "blur": False,
                 "random_erasing": False,
-                "noise": True,
-                "scale": True,
+                "noise_light": False,
+                "noise_medium": False,
+                "noise_strong": False,
+                "scale": False,
             }
             options = default_options if transform_options is None else {**default_options, **transform_options}
             options["preprocessed_input"] = self.dataset_is_preprocessed
+
+            print(transform_options)
+            print(options)
 
             augmentation_transforms = self.data_augmentation.getDataAugmentations(**options)
 
             for transform in augmentation_transforms:
                 aug_subset = self._create_subset(indices, transform=transform)
                 datasets.append(aug_subset)
-        print(len(datasets))
+
         if len(datasets) == 1:
             return datasets[0]
         return ConcatDataset(datasets)
@@ -232,7 +234,7 @@ class DatasetSplitter:
 
     def fold_count(self):
         return len(self.fold_splits)
-        
+
     def get_train_test_datasets(
         self,
         augment_train: bool = False,

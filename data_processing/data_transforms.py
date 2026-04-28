@@ -9,7 +9,7 @@ DEFAULT_SPLIT_TRANSFORMS = {
 		"translation": True,
 		"blur": False,
 		"random_erasing": False,
-		"noise_light": True,
+		"noise_light": False,
 		"noise_medium": False,
 		"noise_strong": False,
 		"scale": True,
