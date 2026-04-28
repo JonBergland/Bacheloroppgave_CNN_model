@@ -251,6 +251,8 @@ class BaseTrainer:
             "val_losses": self.val_losses,
             "train_accuracies": self.train_accuracies,
             "val_accuracies": self.val_accuracies,
+            "test_accuracies": self.test_accuracies,
+            "test_losses_epoch": self.test_losses_epoch,
             "test_accuracy": self.test_accuracy,
             "test_loss": self.test_loss,
             "epoch": len(self.train_accuracies)
@@ -287,6 +289,8 @@ class BaseTrainer:
             self.val_losses = checkpoint.get("val_losses", [])
             self.train_accuracies = checkpoint.get("train_accuracies", [])
             self.val_accuracies = checkpoint.get("val_accuracies", [])
+            self.test_accuracies = checkpoint.get("test_accuracies", [])
+            self.test_losses_epoch = checkpoint.get("test_losses_epoch", [])
             self.test_accuracy = checkpoint.get("test_accuracy", None)
             self.test_loss = checkpoint.get("test_loss", None)
             self.start_epoch = checkpoint.get("epoch", 0)
