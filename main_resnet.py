@@ -201,6 +201,8 @@ def main(dataset_root: str,
         return mean_val, std_val
     else:
         trainer.train()
+        if use_val_split:
+            trainer.restore_best_model()
         trainer.evaluate()
 
         trainer.save_model(model=trainer.model, save_optimizer=True)
@@ -258,7 +260,7 @@ if __name__ == '__main__':
     batch_size = 64
     img_size = 64
     manual_seed = 42
-    only_see_metrics = False
+    only_see_metrics = True
     use_kfold = False
     n_splits = 5
     test_ratio = 0.15

@@ -205,7 +205,8 @@ def main(dataset_root: str,
         return mean_val, std_val
     else:
         trainer.train()
-        trainer.restore_best_model()
+        if use_val_split:
+            trainer.restore_best_model()
         trainer.evaluate()
 
         result = {
