@@ -184,9 +184,6 @@ class DatasetSplitter:
             options = default_options if transform_options is None else {**default_options, **transform_options}
             options["preprocessed_input"] = self.dataset_is_preprocessed
 
-            print(transform_options)
-            print(options)
-
             augmentation_transforms = self.data_augmentation.getDataAugmentations(**options)
 
             for transform in augmentation_transforms:
