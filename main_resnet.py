@@ -247,7 +247,7 @@ if __name__ == '__main__':
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     root = os.path.join(BASE_DIR, "dataset_preprocessed")
 
-    model_name = "resnet_9_data_augmentation.pth"
+    model_name = "resnet_new9_data_augmentation.pth"
     save_dir = os.path.join(BASE_DIR, "saved_models")
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, model_name)
