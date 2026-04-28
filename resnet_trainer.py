@@ -267,6 +267,7 @@ class ResnetTrainer(BaseTrainer):
             print(f"Best model restored from {self.save_path}")
     
     def evaluate(self):
+        self.model.eval()
         correct = 0
         total = 0
         running_test_loss = 0.0
