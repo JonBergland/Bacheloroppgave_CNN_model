@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from torch.amp import GradScaler, autocast
 from base_trainer import BaseTrainer
 
-from resnet import ResNet18, ResNet9
+from resnet import ResNet9
 
 class ResnetTrainer(BaseTrainer):
     def __init__(self, 
