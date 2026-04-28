@@ -34,7 +34,8 @@ class VisionTransformerTrainer(BaseTrainer):
                  dataset_is_preprocessed: bool = True,
                  depth: int = 6,
                  embed_dim: int = 288,
-                 patience: int = 25):
+                 patience: int = 25,
+                 use_val_split: bool = True):
         super().__init__(
             dataset_root=dataset_root,
             model_name=model_name,
@@ -53,6 +54,7 @@ class VisionTransformerTrainer(BaseTrainer):
             augment_train_split=augment_train_split,
             augment_test_split=augment_test_split,
             dataset_is_preprocessed=dataset_is_preprocessed,
+            use_val_split=use_val_split,
         )
 
         self.dropout_rate = dropout_rate
@@ -111,12 +113,24 @@ class VisionTransformerTrainer(BaseTrainer):
         self.val_losses = []
         self.train_accuracies = []
         self.val_accuracies = []
+        self.test_accuracies = []
+        self.test_losses_epoch = []
         self.start_epoch = 0
         self.patience_counter = 0
         self._initialize_model_components(depth=self.depth)
 
     def train(self):
-        best_val_acc = max(self.val_accuracies) if self.val_accuracies else 0.0
+        if self.use_val_split:
+            best_acc = max(self.val_accuracies) if self.val_accuracies else 0.0
+            eval_loader = self.valloader
+            eval_name = "Validation"
+        else:
+            best_acc = max(self.test_accuracies) if hasattr(self, 'test_accuracies') and self.test_accuracies else 0.0
+            if not hasattr(self, 'test_accuracies'):
+                self.test_accuracies = []
+            eval_loader = self.testloader
+            eval_name = "Test"
+        
         print("Starting to train")
 
         for epoch in range(self.start_epoch, self.start_epoch + self.epochs):
@@ -153,21 +167,27 @@ class VisionTransformerTrainer(BaseTrainer):
 
             avg_loss = running_loss / len(self.trainloader)
             train_acc = 100 * correct_train / total_train
-            val_acc = None
-            if self.valloader is not None:
-                val_acc = self.validate()
+            eval_acc = None
+            if eval_loader is not None:
+                if self.use_val_split:
+                    eval_acc = self.validate()
+                else:
+                    eval_acc = self.evaluate_epoch()
 
             self.train_losses.append(avg_loss)
             self.train_accuracies.append(train_acc)
-            if val_acc is not None:
-                self.val_accuracies.append(val_acc)
+            if eval_acc is not None:
+                if self.use_val_split:
+                    self.val_accuracies.append(eval_acc)
+                else:
+                    self.test_accuracies.append(eval_acc)
 
-            if val_acc is not None:
-                if val_acc > best_val_acc:
-                    best_val_acc = val_acc
+            if eval_acc is not None:
+                if eval_acc > best_acc:
+                    best_acc = eval_acc
                     self.patience_counter = 0
                     self.save_model(model=self.model, save_optimizer=True)
-                    print(f"New best model saved with Validation Accuracy: {val_acc:.2f}%")
+                    print(f"New best model saved with {eval_name} Accuracy: {eval_acc:.2f}%")
                 else:
                     self.patience_counter += 1
                     if self.patience_counter >= self.patience:
@@ -179,8 +199,8 @@ class VisionTransformerTrainer(BaseTrainer):
                 f"Loss: {avg_loss:.4f} "
                 f"Train Acc: {train_acc:.2f}%"
             )
-            if val_acc is not None:
-                status += f" Val Acc: {val_acc:.2f}% (patience: {self.patience_counter}/{self.patience})"
+            if eval_acc is not None:
+                status += f" {eval_name} Acc: {eval_acc:.2f}% (patience: {self.patience_counter}/{self.patience})"
             print(status)
 
     def restore_best_model(self):
@@ -209,6 +229,35 @@ class VisionTransformerTrainer(BaseTrainer):
 
         avg_val_loss = running_val_loss / len(self.valloader)
         self.val_losses.append(avg_val_loss)
+
+        accuracy = 100 * correct / total
+        return accuracy
+
+    def evaluate_epoch(self):
+        """Evaluate model on test set for a single epoch during training. Returns accuracy without saving."""
+        self.model.eval()
+
+        correct = 0
+        total = 0
+        running_test_loss = 0.0
+
+        with torch.no_grad():
+            for inputs, labels in self.testloader:
+                inputs, labels = inputs.to(self.device), labels.to(self.device)
+
+                outputs = self.model(inputs)
+                loss = self.criterion(outputs, labels)
+                running_test_loss += loss.item()
+
+                _, preds = torch.max(outputs, 1)
+
+                correct += (preds == labels).sum().item()
+                total += labels.size(0)
+
+        self.model.train()
+
+        avg_test_loss = running_test_loss / len(self.testloader)
+        self.test_losses_epoch.append(avg_test_loss) if hasattr(self, 'test_losses_epoch') else None
 
         accuracy = 100 * correct / total
         return accuracy

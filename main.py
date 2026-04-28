@@ -118,7 +118,8 @@ def main(dataset_root: str,
          num_workers: int = 1,
          vit_depth: int = 6,
          vit_embed_dim: int = 240,
-         show_plots: bool = True):
+         show_plots: bool = True,
+         use_val_split: bool = False):
 
     model_name_lower = model_name.lower()
     trainer_class = VisionTransformerTrainer if "vit" in model_name_lower else ResnetTrainer
@@ -147,7 +148,8 @@ def main(dataset_root: str,
         num_workers=num_workers,
         dataset_is_preprocessed=True,
         depth=vit_depth,
-        embed_dim=vit_embed_dim
+        embed_dim=vit_embed_dim,
+        use_val_split=use_val_split
     )
 
     if use_kfold:
@@ -432,7 +434,7 @@ if __name__ == '__main__':
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     root = os.path.join(BASE_DIR, "dataset_preprocessed")
 
-    model_name = "vit_64_test_data_augmentation.pth"
+    model_name = "vit_64_data_augmentation.pth"
     save_dir = os.path.join(BASE_DIR, "saved_models")
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, model_name)
@@ -457,7 +459,8 @@ if __name__ == '__main__':
     lr_step_size = 7
     lr_gamma = 0.5
     vit_depth = 8
-    vit_embed_dim = 288
+    vit_embed_dim = 240
+    use_val_split = False
 
     #0.48 / 30.2 / 0.025 / 1.66e-4 / 7 / 0.41 / depth 6
     #0.47 / 0.28 / 0.042 / 2.58e-4 / 7 / 0.47 / depth 6
@@ -546,6 +549,7 @@ if __name__ == '__main__':
         vit_depth=vit_depth,
         vit_embed_dim=vit_embed_dim,
         show_plots=True,
+        use_val_split=use_val_split,
     )
 
 

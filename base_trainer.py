@@ -30,7 +30,8 @@ class BaseTrainer:
                  num_workers: int = 1,
                  augment_train_split: bool = False,
                  augment_test_split: bool = False,
-                 dataset_is_preprocessed: bool = True):
+                 dataset_is_preprocessed: bool = True,
+                 use_val_split: bool = True):
 
         self.epochs = epochs
         self.batch_size = batch_size
@@ -46,6 +47,7 @@ class BaseTrainer:
         self.augment_train_split = augment_train_split
         self.augment_test_split = augment_test_split
         self.dataset_is_preprocessed = dataset_is_preprocessed
+        self.use_val_split = use_val_split
 
         self.device_type = "cuda" if torch.cuda.is_available() else "cpu"
         print(f"Device type: {self.device_type}")
@@ -91,6 +93,8 @@ class BaseTrainer:
         self.val_losses = []
         self.train_accuracies = []
         self.val_accuracies = []
+        self.test_accuracies = [] 
+        self.test_losses_epoch = []  
         self.test_accuracy: float | None = None
         self.test_loss: float | None = None
         self.start_epoch = 0
@@ -113,7 +117,10 @@ class BaseTrainer:
         if self.use_kfold:
             self._initialize_holdout_and_folds()
         else:
-            self._initialize_fixed_split()
+            if self.use_val_split:
+                self._initialize_fixed_split()
+            else:
+                self._initialize_fixed_split_train_test_only()
 
     def make_train_transform(self):
         ops = [v2.Resize((self.img_size, self.img_size))]
@@ -146,6 +153,22 @@ class BaseTrainer:
 
         self.trainloader = self._build_loader(train_dataset, shuffle=True)
         self.valloader = self._build_loader(val_dataset, shuffle=False)
+        self.testloader = self._build_loader(test_dataset, shuffle=False)
+
+    def _initialize_fixed_split_train_test_only(self):
+        """Initialize with train/test split only (no validation set)."""
+        self.train_indices, self.test_indices = self.dataset_splitter.get_split_indices()
+        self.val_indices = []  
+
+        train_dataset, test_dataset = self.dataset_splitter.get_train_test_datasets(
+            augment_train=self.augment_train_split,
+            augment_test=self.augment_test_split,
+            train_transform_options=self.split_transform_options["train"],
+            test_transform_options=self.split_transform_options["test"],
+        )
+
+        self.trainloader = self._build_loader(train_dataset, shuffle=True)
+        self.valloader = None  # No validation loader
         self.testloader = self._build_loader(test_dataset, shuffle=False)
 
     def _initialize_holdout_and_folds(self):
@@ -283,13 +306,35 @@ class BaseTrainer:
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
 
         train_acc_epochs = range(1, len(self.train_accuracies) + 1)
-        val_acc_epochs = range(1, len(self.val_accuracies) + 1)
+        
+        # Use validation accuracies if available, otherwise use test accuracies
+        if self.val_accuracies:
+            eval_acc_epochs = range(1, len(self.val_accuracies) + 1)
+            eval_accuracies = self.val_accuracies
+            eval_label = 'Validation Accuracy'
+        elif hasattr(self, 'test_accuracies') and self.test_accuracies:
+            eval_acc_epochs = range(1, len(self.test_accuracies) + 1)
+            eval_accuracies = self.test_accuracies
+            eval_label = 'Test Accuracy'
+        else:
+            eval_accuracies = None
+            eval_label = None
+        
         train_loss_epochs = range(1, len(self.train_losses) + 1)
-        val_loss_epochs = range(1, len(self.val_losses) + 1)
+        
+        # Same for losses
+        if self.val_losses:
+            eval_loss_epochs = range(1, len(self.val_losses) + 1)
+            eval_losses = self.val_losses
+        elif hasattr(self, 'test_losses_epoch') and self.test_losses_epoch:
+            eval_loss_epochs = range(1, len(self.test_losses_epoch) + 1)
+            eval_losses = self.test_losses_epoch
+        else:
+            eval_losses = None
 
         ax1.plot(train_acc_epochs, self.train_accuracies, label='Train Accuracy', marker='o')
-        if self.val_accuracies:
-            ax1.plot(val_acc_epochs, self.val_accuracies, label='Validation Accuracy', marker='o')
+        if eval_accuracies:
+            ax1.plot(eval_acc_epochs, eval_accuracies, label=eval_label, marker='o')
         if self.test_accuracy is not None:
             test_epoch = (len(self.train_accuracies) + 1) if self.train_accuracies else 1
             ax1.scatter(
@@ -308,8 +353,8 @@ class BaseTrainer:
         ax1.grid(True)
 
         ax2.plot(train_loss_epochs, self.train_losses, label='Training Loss', marker='o')
-        if self.val_losses:
-            ax2.plot(val_loss_epochs, self.val_losses, label='Validation Loss', marker='o')
+        if eval_losses:
+            ax2.plot(eval_loss_epochs, eval_losses, label=f'{eval_label.replace(" Accuracy", " Loss")}', marker='o')
         if self.test_loss is not None:
             test_epoch = (len(self.train_losses) + 1) if self.train_losses else 1
             ax2.scatter(

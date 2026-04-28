@@ -115,7 +115,8 @@ def main(dataset_root: str,
          augment_train_split: bool = False,
          augment_test_split: bool = False,
          num_workers: int = 1,
-         vit_depth: int = 6):
+         vit_depth: int = 6,
+         use_val_split: bool = False):
 
     model_name_lower = model_name.lower()
     trainer_class = VisionTransformerTrainer if "vit" in model_name_lower else ResnetTrainer
@@ -143,7 +144,8 @@ def main(dataset_root: str,
         augment_test_split=augment_test_split,
         num_workers=num_workers,
         dataset_is_preprocessed=True,
-        depth=vit_depth
+        depth=vit_depth,
+        use_val_split=use_val_split
     )
 
     if use_kfold:
@@ -272,6 +274,7 @@ if __name__ == '__main__':
     lr_step_size = 9
     lr_gamma = 0.1
     vit_depth = 6
+    use_val_split = False 
 
 
     main(
@@ -297,6 +300,7 @@ if __name__ == '__main__':
         augment_test_split=augment_test_split,
         num_workers=num_workers,
         vit_depth=vit_depth,
+        use_val_split=use_val_split,
     )
 
 
