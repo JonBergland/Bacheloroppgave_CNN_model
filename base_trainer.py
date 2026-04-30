@@ -336,9 +336,9 @@ class BaseTrainer:
         else:
             eval_losses = None
 
-        ax1.plot(train_acc_epochs, self.train_accuracies, label='Train Accuracy', marker='o')
+        ax1.plot(train_acc_epochs, self.train_accuracies, label='Train Accuracy')
         if eval_accuracies:
-            ax1.plot(eval_acc_epochs, eval_accuracies, label=eval_label, marker='o')
+            ax1.plot(eval_acc_epochs, eval_accuracies, label=eval_label)
         if self.test_accuracy is not None:
             test_epoch = (len(self.train_accuracies) + 1) if self.train_accuracies else 1
             ax1.scatter(
@@ -356,9 +356,9 @@ class BaseTrainer:
         ax1.legend()
         ax1.grid(True)
 
-        ax2.plot(train_loss_epochs, self.train_losses, label='Training Loss', marker='o')
+        ax2.plot(train_loss_epochs, self.train_losses, label='Training Loss')
         if eval_losses:
-            ax2.plot(eval_loss_epochs, eval_losses, label=f'{eval_label.replace(" Accuracy", " Loss")}', marker='o')
+            ax2.plot(eval_loss_epochs, eval_losses, label=f'{eval_label.replace(" Accuracy", " Loss")}')
         if self.test_loss is not None:
             test_epoch = (len(self.train_losses) + 1) if self.train_losses else 1
             ax2.scatter(
