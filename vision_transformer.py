@@ -39,7 +39,8 @@ class TransformerEncoderBlock(nn.Module):
         self.attn = MultiHeadAttention(embed_dim, num_heads, dropout=dropout)
         self.mlp = nn.Sequential(
             nn.Linear(embed_dim, mlp_dim),
-            nn.ReLU(),
+            nn.GELU(),
+            nn.Dropout(dropout),
             nn.Linear(mlp_dim, embed_dim)
         )
         self.norm1 = nn.LayerNorm(embed_dim)
@@ -58,10 +59,13 @@ class VisionTransformer(nn.Module):
                  embed_dim=768, 
                  num_heads=8, 
                  depth=6, 
-                 mlp_dim=1024,
+                 mlp_dim=None,
                  in_channels=1,
                  dropout=0.1):
         super().__init__()
+        if mlp_dim is None:
+            mlp_dim = 4 * embed_dim
+        
         self.patch_embedding = PatchEmbedding(img_size, patch_size, in_channels, embed_dim)
 
         self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
@@ -69,6 +73,9 @@ class VisionTransformer(nn.Module):
 
         seq_len = (img_size // patch_size) ** 2
         self.pos_encoding = PositionalEncoding(embed_dim, seq_len)
+        nn.init.trunc_normal_(self.pos_encoding.pos_embed, std=0.02)
+        
+        self.norm = nn.LayerNorm(embed_dim)
         self.transformer_blocks = nn.ModuleList([
             TransformerEncoderBlock(embed_dim, num_heads, mlp_dim, dropout=dropout) for _ in range(depth)
         ])
@@ -83,4 +90,5 @@ class VisionTransformer(nn.Module):
         x = self.pos_encoding(x)
         for block in self.transformer_blocks:
             x = block(x)
+        x = self.norm(x)
         return self.mlp_head(x[:, 0])
