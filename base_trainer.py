@@ -352,7 +352,7 @@ class BaseTrainer:
             )
         ax1.set_xlabel('Epoch')
         ax1.set_ylabel('Accuracy (%)')
-        ax1.set_title('Training with flip, translation and scale. Validation and Test with Noise')
+        ax1.set_title('Training with flip, translation and scale. Test with Light Noise')
         ax1.legend()
         ax1.grid(True)
 
