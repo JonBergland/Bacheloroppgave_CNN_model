@@ -54,14 +54,14 @@ def objective(trial: optuna.Trial,):
         vit_depth = 6
     elif "vit" in model_name.lower():
         # ViT settings
-        dropout_rate = trial.suggest_float("dropout_rate", 0.1, 0.6, step=0.01)
-        label_smoothing = trial.suggest_float("label_smoothing", 0.01, 0.3, step=0.01)
-        weight_decay = trial.suggest_float("weight_decay", 1e-3, 1e-1, step=0.001)
+        dropout_rate = trial.suggest_float("dropout_rate", 0.2, 0.6, step=0.01)
+        label_smoothing = trial.suggest_float("label_smoothing", 0.0, 0.25, step=0.01)
+        weight_decay = trial.suggest_float("weight_decay", 1e-5, 1e-1, step=0.001)
         lr_rate = trial.suggest_float("lr_rate", 1e-5, 3e-3, log=True)
 
-        lr_step_size = trial.suggest_int("lr_step_size", 3, 10)
-        lr_gamma = trial.suggest_float("lr_gamma", 0.4, 0.9, step=0.01)
-        vit_depth = trial.suggest_categorical("vit_depth", [4, 6, 8, 10, 12])
+        lr_step_size = trial.suggest_int("lr_step_size", 3, 12)
+        lr_gamma = trial.suggest_float("lr_gamma", 0.3, 0.7, step=0.01)
+        vit_depth = 8
     else:
         raise ValueError(
             "model_name must include either 'resnet' or 'vit' to choose model-specific parameters"
@@ -398,31 +398,31 @@ def run_embed_dim_sweep(
 
 
 if __name__ == '__main__':
-    # study_name = "ViT Hyperparameter Study"
-    # storage_name = "sqlite:///{}.db".format(study_name)
-    # directions = [StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE]
-    # sampler = _create_sampler(seed=42)
+    study_name = "ViT Hyperparameter Study"
+    storage_name = "sqlite:///{}.db".format(study_name)
+    directions = [StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE]
+    sampler = _create_sampler(seed=42)
 
-    # study = optuna.create_study(
-    #     study_name=study_name,
-    #     sampler=sampler,
-    #     storage=storage_name,
-    #     load_if_exists=True,
-    #     directions=directions
-    # )
+    study = optuna.create_study(
+        study_name=study_name,
+        sampler=sampler,
+        storage=storage_name,
+        load_if_exists=True,
+        directions=directions
+    )
 
-    # run_server(storage_name)
+    run_server(storage_name)
 
-    # for _ in range(0):
-    #     study.optimize(objective, n_trials=1)
+    for _ in range(10):
+        study.optimize(objective, n_trials=5)
 
-    # for trial in study.best_trials:
-    #     print(f"{trial.values} wiht {trial.params}")
-    # if study.best_trials:
-    #     best_trial = study.best_trials[0]
-    #     print(f"Best trial values: {best_trial.values} (params: {best_trial.params})")
-    # else:
-    #     print("No completed trials yet.")
+    for trial in study.best_trials:
+        print(f"{trial.values} wiht {trial.params}")
+    if study.best_trials:
+        best_trial = study.best_trials[0]
+        print(f"Best trial values: {best_trial.values} (params: {best_trial.params})")
+    else:
+        print("No completed trials yet.")
 
     # Best Params:
     # dropout_rate=0.48
@@ -432,126 +432,123 @@ if __name__ == '__main__':
     # lr_step_size=7
     # lr_gamma=0.4
     # vit_depth = 6
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    root = os.path.join(BASE_DIR, "dataset_preprocessed")
+    # BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    # root = os.path.join(BASE_DIR, "dataset_preprocessed")
 
-    model_name = "vit_64_data_augmentation.pth"
-    save_dir = os.path.join(BASE_DIR, "saved_models")
-    os.makedirs(save_dir, exist_ok=True)
-    save_path = os.path.join(save_dir, model_name)
+    # model_name = "vit_8_data_augmentation.pth"
+    # save_dir = os.path.join(BASE_DIR, "saved_models")
+    # os.makedirs(save_dir, exist_ok=True)
+    # save_path = os.path.join(save_dir, model_name)
 
-    epochs = 50
-    batch_size = 64
-    img_size = 64
-    manual_seed = 42
-    only_see_metrics = False
-    use_kfold = False
-    n_splits = 5
-    test_ratio = 0.10
-    stratified_kfold = True
-    augment_train_split = True
-    augment_test_split = True
-    num_workers = 1
+    # epochs = 100
+    # batch_size = 64
+    # img_size = 64
+    # manual_seed = 42
+    # only_see_metrics = False
+    # use_kfold = False
+    # n_splits = 5
+    # test_ratio = 0.10
+    # stratified_kfold = True
+    # augment_train_split = True
+    # augment_test_split = True
+    # num_workers = 1
 
-    dropout_rate = 0.5
-    label_smoothing = 0.10
-    weight_decay = 0.025
-    lr_rate = 2e-4
-    lr_step_size = 7
-    lr_gamma = 0.5
-    vit_depth = 8
-    vit_embed_dim = 240
-    use_val_split = False
+    # dropout_rate = 0.5
+    # label_smoothing = 0.10
+    # weight_decay = 0.025
+    # lr_rate = 2e-4
+    # lr_step_size = 7
+    # lr_gamma = 0.5
+    # vit_depth = 8
+    # vit_embed_dim = 240
+    # use_val_split = False
 
-    #0.48 / 30.2 / 0.025 / 1.66e-4 / 7 / 0.41 / depth 6
-    #0.47 / 0.28 / 0.042 / 2.58e-4 / 7 / 0.47 / depth 6
+    # #0.48 / 30.2 / 0.025 / 1.66e-4 / 7 / 0.41 / depth 6
+    # #0.47 / 0.28 / 0.042 / 2.58e-4 / 7 / 0.47 / depth 6
 
-    # Show transformations
-    # from data_processing.data_augmentation import DataAugmentation
+    # # Show transformations
+    # # from data_processing.data_augmentation import DataAugmentation
 
-    # aug = DataAugmentation(img_size=64, output_channels=1)
-    # aug.showAugmentedSamples(
-    # image_path="dataset_preprocessed/banana/0000.jpg",
-    # horizontal_flip=True,
-    # vertical_flip=True,
-    # translation=True,
-    # blur=True,
-    # random_erasing=True,
-    # noise=True,
-    # scale=True,
-    # preprocessed_input=True,
-    # include_base=True,
-    # )
+    # # aug = DataAugmentation(img_size=64, output_channels=1)
+    # # aug.showAugmentedSamples(
+    # # image_path="dataset_preprocessed/banana/0000.jpg",
+    # # horizontal_flip=True,
+    # # vertical_flip=True,
+    # # translation=True,
+    # # blur=True,
+    # # random_erasing=True,
+    # # noise=True,
+    # # scale=True,
+    # # preprocessed_input=True,
+    # # include_base=True,
+    # # )
 
     
-    run_double_descent = False
-    run_embed_dim_sweep_mode = False
+    # run_double_descent = False
+    # run_embed_dim_sweep_mode = False
 
-    if run_double_descent:
-        run_double_descent_depth_sweep(
-            dataset_root=root,
-            save_dir=save_dir,
-            epochs=80,
-            batch_size=batch_size,
-            img_size=img_size,
-            manual_seed=manual_seed,
-            lr_rate=lr_rate,
-            dropout_rate=dropout_rate,
-            label_smoothing=label_smoothing,
-            weight_decay=weight_decay,
-            lr_step_size=lr_step_size,
-            lr_gamma=lr_gamma,
-            test_ratio=test_ratio,
-            num_workers=num_workers,
-            depth_values=[2, 3, 4, 6, 8, 10, 12],
-        )
-    elif run_embed_dim_sweep_mode:
-        run_embed_dim_sweep(
-            dataset_root=root,
-            save_dir=save_dir,
-            epochs=80,
-            batch_size=batch_size,
-            img_size=img_size,
-            manual_seed=manual_seed,
-            lr_rate=lr_rate,
-            dropout_rate=dropout_rate,
-            label_smoothing=label_smoothing,
-            weight_decay=weight_decay,
-            lr_step_size=lr_step_size,
-            lr_gamma=lr_gamma,
-            test_ratio=test_ratio,
-            num_workers=num_workers,
-            embed_dim_values=[192, 240, 288, 336, 384, 432, 480],
-            depth=8,
-        )
-    else:
-        main(
-        dataset_root=root,
-        model_name=model_name,
-        epochs=epochs,
-        lr_rate=lr_rate,
-        batch_size=batch_size,
-        img_size=img_size,
-        manual_seed=manual_seed,
-        save_path=save_path,
-        only_see_metrics=only_see_metrics,
-        dropout_rate=dropout_rate,
-        label_smoothing=label_smoothing,
-        weight_decay=weight_decay,
-        lr_step_size=lr_step_size,
-        lr_gamma=lr_gamma,
-        use_kfold=use_kfold,
-        n_splits=n_splits,
-        test_ratio=test_ratio,
-        stratified_kfold=stratified_kfold,
-        augment_train_split=augment_train_split,
-        augment_test_split=augment_test_split,
-        num_workers=num_workers,
-        vit_depth=vit_depth,
-        vit_embed_dim=vit_embed_dim,
-        show_plots=True,
-        use_val_split=use_val_split,
-    )
-
-
-
+    # if run_double_descent:
+    #     run_double_descent_depth_sweep(
+    #         dataset_root=root,
+    #         save_dir=save_dir,
+    #         epochs=80,
+    #         batch_size=batch_size,
+    #         img_size=img_size,
+    #         manual_seed=manual_seed,
+    #         lr_rate=lr_rate,
+    #         dropout_rate=dropout_rate,
+    #         label_smoothing=label_smoothing,
+    #         weight_decay=weight_decay,
+    #         lr_step_size=lr_step_size,
+    #         lr_gamma=lr_gamma,
+    #         test_ratio=test_ratio,
+    #         num_workers=num_workers,
+    #         depth_values=[2, 3, 4, 6, 8, 10, 12],
+    #     )
+    # elif run_embed_dim_sweep_mode:
+    #     run_embed_dim_sweep(
+    #         dataset_root=root,
+    #         save_dir=save_dir,
+    #         epochs=80,
+    #         batch_size=batch_size,
+    #         img_size=img_size,
+    #         manual_seed=manual_seed,
+    #         lr_rate=lr_rate,
+    #         dropout_rate=dropout_rate,
+    #         label_smoothing=label_smoothing,
+    #         weight_decay=weight_decay,
+    #         lr_step_size=lr_step_size,
+    #         lr_gamma=lr_gamma,
+    #         test_ratio=test_ratio,
+    #         num_workers=num_workers,
+    #         embed_dim_values=[192, 240, 288, 336, 384, 432, 480],
+    #         depth=8,
+    #     )
+    # else:
+    #     main(
+    #     dataset_root=root,
+    #     model_name=model_name,
+    #     epochs=epochs,
+    #     lr_rate=lr_rate,
+    #     batch_size=batch_size,
+    #     img_size=img_size,
+    #     manual_seed=manual_seed,
+    #     save_path=save_path,
+    #     only_see_metrics=only_see_metrics,
+    #     dropout_rate=dropout_rate,
+    #     label_smoothing=label_smoothing,
+    #     weight_decay=weight_decay,
+    #     lr_step_size=lr_step_size,
+    #     lr_gamma=lr_gamma,
+    #     use_kfold=use_kfold,
+    #     n_splits=n_splits,
+    #     test_ratio=test_ratio,
+    #     stratified_kfold=stratified_kfold,
+    #     augment_train_split=augment_train_split,
+    #     augment_test_split=augment_test_split,
+    #     num_workers=num_workers,
+    #     vit_depth=vit_depth,
+    #     vit_embed_dim=vit_embed_dim,
+    #     show_plots=True,
+    #     use_val_split=use_val_split,
+    # )
