@@ -44,11 +44,11 @@ def objective(trial: optuna.Trial,):
 
     if "resnet" in model_name.lower():
         # ResNet settings
-        dropout_rate = trial.suggest_float("dropout_rate", 0.1, 0.7, step=0.01)
+        dropout_rate = trial.suggest_float("dropout_rate", 0.4, 0.7, step=0.01)
         label_smoothing = trial.suggest_float("label_smoothing", 0.0, 0.2, step=0.01)
-        weight_decay = trial.suggest_float("weight_decay", 1e-5, 1e-2, log=True)
+        weight_decay = trial.suggest_float("weight_decay", 1e-6, 1e-2, log=True)
         lr_rate = trial.suggest_float("lr_rate", 1e-5, 3e-3, log=True)
-        lr_step_size = trial.suggest_int("lr_step_size", 3, 12)
+        lr_step_size = trial.suggest_int("lr_step_size", 4, 12)
         lr_gamma = trial.suggest_float("lr_gamma", 0.1, 0.9, step=0.05)
         vit_depth = 6
     elif "vit" in model_name.lower():
@@ -212,33 +212,32 @@ def main(dataset_root: str,
 
 
 if __name__ == '__main__':
-    # study_name = "ResNet Hyperparameter Study"
-    # storage_name = "sqlite:///{}.db".format(study_name)
-    # directions = [StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE]
-    # sampler = _create_sampler(seed=42)
+    study_name = "ResNet Hyperparameter Study"
+    storage_name = "sqlite:///{}.db".format(study_name)
+    directions = [StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE]
+    sampler = _create_sampler(seed=42)
 
-    # study = optuna.create_study(
-    #     study_name=study_name,
-    #     sampler=sampler,
-    #     storage=storage_name,
-    #     load_if_exists=True,
-    #     directions=directions
-    # )
+    study = optuna.create_study(
+        study_name=study_name,
+        sampler=sampler,
+        storage=storage_name,
+        load_if_exists=True,
+        directions=directions
+    )
 
-    # run_server(storage_name)
+    run_server(storage_name)
 
-    # for _ in range(0):
-    #     study.optimize(objective, n_trials=1)
+    for _ in range(10):
+        study.optimize(objective, n_trials=5)
 
-    # Multi-objective studies expose best_trials (Pareto front), not best_value/best_params.
 
-    # for trial in study.best_trials:
-    #     print(f"{trial.values} wiht {trial.params}")
-    # if study.best_trials:
-    #     best_trial = study.best_trials[0]
-    #     print(f"Best trial values: {best_trial.values} (params: {best_trial.params})")
-    # else:
-    #     print("No completed trials yet.")
+    for trial in study.best_trials:
+        print(f"{trial.values} wiht {trial.params}")
+    if study.best_trials:
+        best_trial = study.best_trials[0]
+        print(f"Best trial values: {best_trial.values} (params: {best_trial.params})")
+    else:
+        print("No completed trials yet.")
 
     # Best params:
     # droput_rate: 0.10
@@ -248,62 +247,62 @@ if __name__ == '__main__':
     # lr_step_size: 9
     # lr_gamma: 0.1
 
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    root = os.path.join(BASE_DIR, "dataset_preprocessed")
+    # BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    # root = os.path.join(BASE_DIR, "dataset_preprocessed")
 
-    model_name = "resnet_new9_data_augmentation.pth"
-    save_dir = os.path.join(BASE_DIR, "saved_models")
-    os.makedirs(save_dir, exist_ok=True)
-    save_path = os.path.join(save_dir, model_name)
+    # model_name = "resnet_9_light_noise.pth"
+    # save_dir = os.path.join(BASE_DIR, "saved_models")
+    # os.makedirs(save_dir, exist_ok=True)
+    # save_path = os.path.join(save_dir, model_name)
 
-    epochs = 50
-    batch_size = 64
-    img_size = 64
-    manual_seed = 42
-    only_see_metrics = True
-    use_kfold = False
-    n_splits = 5
-    test_ratio = 0.15
-    stratified_kfold = False
-    augment_train_split = True
-    augment_test_split = True
-    num_workers = 1
+    # epochs = 50
+    # batch_size = 32
+    # img_size = 64
+    # manual_seed = 42
+    # only_see_metrics = False
+    # use_kfold = False
+    # n_splits = 5
+    # test_ratio = 0.15
+    # stratified_kfold = False
+    # augment_train_split = True
+    # augment_test_split = True
+    # num_workers = 1
 
-    dropout_rate = 0.10
-    label_smoothing = 0.0
-    weight_decay = 8.25e-4
-    lr_rate = 1.2e-3
-    lr_step_size = 9
-    lr_gamma = 0.1
-    vit_depth = 6
-    use_val_split = False 
+    # dropout_rate = 0.6
+    # label_smoothing = 0.0
+    # weight_decay = 1.0e-5
+    # lr_rate = 1.2e-3
+    # lr_step_size = 9
+    # lr_gamma = 0.1
+    # vit_depth = 6
+    # use_val_split = False 
 
 
-    main(
-        dataset_root=root,
-        model_name=model_name,
-        epochs=epochs,
-        lr_rate=lr_rate,
-        batch_size=batch_size,
-        img_size=img_size,
-        manual_seed=manual_seed,
-        save_path=save_path,
-        only_see_metrics=only_see_metrics,
-        dropout_rate=dropout_rate,
-        label_smoothing=label_smoothing,
-        weight_decay=weight_decay,
-        lr_step_size=lr_step_size,
-        lr_gamma=lr_gamma,
-        use_kfold=use_kfold,
-        n_splits=n_splits,
-        test_ratio=test_ratio,
-        stratified_kfold=stratified_kfold,
-        augment_train_split=augment_train_split,
-        augment_test_split=augment_test_split,
-        num_workers=num_workers,
-        vit_depth=vit_depth,
-        use_val_split=use_val_split,
-    )
+    # main(
+    #     dataset_root=root,
+    #     model_name=model_name,
+    #     epochs=epochs,
+    #     lr_rate=lr_rate,
+    #     batch_size=batch_size,
+    #     img_size=img_size,
+    #     manual_seed=manual_seed,
+    #     save_path=save_path,
+    #     only_see_metrics=only_see_metrics,
+    #     dropout_rate=dropout_rate,
+    #     label_smoothing=label_smoothing,
+    #     weight_decay=weight_decay,
+    #     lr_step_size=lr_step_size,
+    #     lr_gamma=lr_gamma,
+    #     use_kfold=use_kfold,
+    #     n_splits=n_splits,
+    #     test_ratio=test_ratio,
+    #     stratified_kfold=stratified_kfold,
+    #     augment_train_split=augment_train_split,
+    #     augment_test_split=augment_test_split,
+    #     num_workers=num_workers,
+    #     vit_depth=vit_depth,
+    #     use_val_split=use_val_split,
+    # )
 
 
 
