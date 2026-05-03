@@ -171,7 +171,7 @@ def main(dataset_root: str,
 
             trainer.train()
 
-            fold_best_val = max(trainer.val_accuracies) if trainer.val_accuracies else 0.0
+            fold_best_val = max(trainer.test_accuracies) if trainer.test_accuracies else 0.0
             fold_best_val_scores.append(fold_best_val)
             fold_model_paths.append(fold_save_path)
             print(f"Fold {fold_idx + 1} best validation accuracy: {fold_best_val:.2f}%")
