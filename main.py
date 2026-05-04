@@ -25,7 +25,7 @@ def objective(trial: optuna.Trial,):
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     root = os.path.join(BASE_DIR, "dataset_preprocessed")
 
-    model_name = "vit_64_no_data_augmentation.pth"
+    model_name = "vit_8_no_data_augmentation.pth"
     save_dir = os.path.join(BASE_DIR, "saved_models")
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, model_name)
@@ -61,7 +61,7 @@ def objective(trial: optuna.Trial,):
 
         lr_step_size = trial.suggest_int("lr_step_size", 3, 12)
         lr_gamma = trial.suggest_float("lr_gamma", 0.3, 0.7, step=0.01)
-        vit_depth = 8
+        vit_depth = trial.suggest_categorical("vit_depth", [6, 8, 10])
     else:
         raise ValueError(
             "model_name must include either 'resnet' or 'vit' to choose model-specific parameters"
