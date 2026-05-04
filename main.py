@@ -61,7 +61,7 @@ def objective(trial: optuna.Trial,):
 
         lr_step_size = trial.suggest_int("lr_step_size", 3, 12)
         lr_gamma = trial.suggest_float("lr_gamma", 0.3, 0.7, step=0.01)
-        vit_depth = trial.suggest_categorical("vit_depth", [6, 8, 10])
+        vit_depth = trial.suggest_int("vit_depth", 6, 10, step=2)
     else:
         raise ValueError(
             "model_name must include either 'resnet' or 'vit' to choose model-specific parameters"
@@ -216,13 +216,11 @@ def main(dataset_root: str,
             "test_loss": trainer.test_loss if trainer.test_loss is not None else float("nan"),
         }
 
-        trainer.train()
         if use_val_split:
-            trainer.restore_best_model()
-        trainer.evaluate()
-
-        mean_val = max(trainer.test_accuracies) if trainer.test_accuracies else 0.0
-        std_val = 0
+            mean_val = result["best_val_acc"]
+        else:
+            mean_val = result["test_acc"]
+        std_val = 0.0
         
 
         # trainer.save_model(model=trainer.model, save_optimizer=True)
@@ -453,16 +451,27 @@ if __name__ == '__main__':
     # BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     # root = os.path.join(BASE_DIR, "dataset_preprocessed")
 
-    # model_name = "vit_8_data_augmentation.pth"
+    # model_name = "vit_64_no_data_augmentation.pth"
     # save_dir = os.path.join(BASE_DIR, "saved_models")
     # os.makedirs(save_dir, exist_ok=True)
     # save_path = os.path.join(save_dir, model_name)
+
+    # from torchinfo import summary
+    # from vision_transformer import VisionTransformer
+
+    # model = VisionTransformer()
+    # summary(
+    #     model,
+    #     input_size=(1, 1, 64, 64),          # (batch, kanal, høyde, bredde)
+    #     col_names=["output_size", "kernel_size", "num_params"],
+    #     row_settings=["depth"]
+    # )
 
     # epochs = 100
     # batch_size = 64
     # img_size = 64
     # manual_seed = 42
-    # only_see_metrics = False
+    # only_see_metrics = True
     # use_kfold = False
     # n_splits = 5
     # test_ratio = 0.10
@@ -481,27 +490,28 @@ if __name__ == '__main__':
     # vit_embed_dim = 240
     # use_val_split = False
 
-    # #0.48 / 30.2 / 0.025 / 1.66e-4 / 7 / 0.41 / depth 6
-    # #0.47 / 0.28 / 0.042 / 2.58e-4 / 7 / 0.47 / depth 6
+    # # #0.48 / 30.2 / 0.025 / 1.66e-4 / 7 / 0.41 / depth 6
+    # # #0.47 / 0.28 / 0.042 / 2.58e-4 / 7 / 0.47 / depth 6
 
-    # # Show transformations
-    # # from data_processing.data_augmentation import DataAugmentation
+    # # # Show transformations
+    # from data_processing.data_augmentation import DataAugmentation
 
-    # # aug = DataAugmentation(img_size=64, output_channels=1)
-    # # aug.showAugmentedSamples(
-    # # image_path="dataset_preprocessed/banana/0000.jpg",
-    # # horizontal_flip=True,
-    # # vertical_flip=True,
-    # # translation=True,
-    # # blur=True,
-    # # random_erasing=True,
-    # # noise=True,
-    # # scale=True,
-    # # preprocessed_input=True,
-    # # include_base=True,
-    # # )
+    # aug = DataAugmentation(img_size=64, output_channels=1)
+    # aug.showAugmentedSamples(
+    # image_path="dataset_preprocessed/banana/0000.jpg",
+    # horizontal_flip=True,
+    # vertical_flip=False,
+    # translation=True,
+    # blur=False,
+    # random_erasing=False,
+    # noise_light=True,
+    # noise_medium=True,
+    # noise_strong=True,
+    # scale=True,
+    # preprocessed_input=True,
+    # include_base=True,
+    # )
 
-    
     # run_double_descent = False
     # run_embed_dim_sweep_mode = False
 
