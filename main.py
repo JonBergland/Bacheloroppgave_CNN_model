@@ -70,6 +70,20 @@ def objective(trial: optuna.Trial,):
             "model_name must include either 'resnet' or 'vit' to choose model-specific parameters"
         )
 
+    # Print hyperparameters for this trial
+    print("\n" + "="*70)
+    print("TRIAL HYPERPARAMETERS:")
+    print("="*70)
+    print(f"dropout_rate: {dropout_rate:.4f}")
+    print(f"label_smoothing: {label_smoothing:.4f}")
+    print(f"weight_decay: {weight_decay:.6f}")
+    print(f"lr_rate: {lr_rate:.8f}")
+    print(f"lr_step_size: {lr_step_size}")
+    print(f"lr_gamma: {lr_gamma:.4f}")
+    print(f"vit_depth: {vit_depth}")
+    print(f"vit_embed_dim: {embed_dim}")
+    print("="*70 + "\n")
+
     mean_val, std_val = main(
         dataset_root=root,
         model_name=model_name,
@@ -416,7 +430,7 @@ def run_embed_dim_sweep(
 
 
 if __name__ == '__main__':
-    study_name = "ViT Hyperparameter Study"
+    study_name = "ViT New Hyperparameter Study"
     storage_name = "sqlite:///{}.db".format(study_name)
     directions = [StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE]
     sampler = _create_sampler(seed=42)
@@ -428,6 +442,17 @@ if __name__ == '__main__':
         load_if_exists=True,
         directions=directions
     )
+
+    # Queue best trials from previous run (sorted by accuracy, highest first)
+    # These trials lack vit_embed_dim, so we add a default value of 240
+    best_trials_to_queue = [
+        {'dropout_rate': 0.5, 'label_smoothing': 0.22, 'weight_decay': 0.068, 'lr_rate': 0.000321711060347216, 'lr_step_size': 6, 'lr_gamma': 0.46, 'vit_depth': 6, 'vit_embed_dim': 240},
+        {'dropout_rate': 0.5, 'label_smoothing': 0.1, 'weight_decay': 0.025, 'lr_rate': 2e-4, 'lr_step_size': 7, 'lr_gamma': 0.5, 'vit_depth': 8, 'vit_embed_dim': 240}
+    ]
+    
+    for trial_params in best_trials_to_queue:
+        study.enqueue_trial(trial_params)
+        print(f"Queued trial with vit_depth={trial_params['vit_depth']}, embed_dim={trial_params['vit_embed_dim']}")
 
     # run_server(storage_name)
 
