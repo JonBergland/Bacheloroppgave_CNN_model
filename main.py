@@ -42,6 +42,7 @@ def objective(trial: optuna.Trial,):
     augment_train_split = False
     augment_test_split = False
     num_workers = 1
+    embed_dim = 240
 
     if "resnet" in model_name.lower():
         # ResNet settings
@@ -62,6 +63,8 @@ def objective(trial: optuna.Trial,):
         lr_step_size = trial.suggest_int("lr_step_size", 3, 12)
         lr_gamma = trial.suggest_float("lr_gamma", 0.3, 0.7, step=0.01)
         vit_depth = trial.suggest_int("vit_depth", 6, 10, step=2)
+        embed_dim = trial.suggest_int("vit_embed_dim", 192, 480, step=48)
+
     else:
         raise ValueError(
             "model_name must include either 'resnet' or 'vit' to choose model-specific parameters"
@@ -89,6 +92,7 @@ def objective(trial: optuna.Trial,):
         augment_train_split=augment_train_split,
         augment_test_split=augment_test_split,
         num_workers=num_workers,
+        vit_embed_dim=embed_dim,
         vit_depth=vit_depth,
     )
 
