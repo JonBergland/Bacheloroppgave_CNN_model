@@ -30,15 +30,15 @@ def objective(trial: optuna.Trial,):
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, model_name)
 
-    epochs = 50
+    epochs = 60
     batch_size = 64
     img_size = 64
     manual_seed = 42
     only_see_metrics = False
-    use_kfold = True
+    use_kfold = False
     n_splits = 5
-    test_ratio = 0.10
-    stratified_kfold = True
+    test_ratio = 0.20
+    stratified_kfold = False
     augment_train_split = False
     augment_test_split = False
     num_workers = 1
@@ -216,11 +216,27 @@ def main(dataset_root: str,
             "test_loss": trainer.test_loss if trainer.test_loss is not None else float("nan"),
         }
 
-        trainer.save_model(model=trainer.model, save_optimizer=True)
-        if show_plots:
-            trainer.plot_metrics()
+        trainer.train()
+        if use_val_split:
+            trainer.restore_best_model()
+        trainer.evaluate()
+
+        mean_val = max(trainer.test_accuracies) if trainer.test_accuracies else 0.0
+        std_val = 0
+        
+
+        # trainer.save_model(model=trainer.model, save_optimizer=True)
         trainer.clear_model()
-        return result
+
+        # trainer.save_model(model=trainer.model, save_optimizer=True)
+        # if show_plots:
+        #     trainer.plot_metrics()
+        # trainer.clear_model()
+        # return result
+
+        return mean_val, std_val
+
+        
 
 
 def run_double_descent_depth_sweep(
@@ -411,10 +427,12 @@ if __name__ == '__main__':
         directions=directions
     )
 
-    run_server(storage_name)
+    # run_server(storage_name)
 
-    for _ in range(10):
-        study.optimize(objective, n_trials=5)
+    # print(study.trials)
+
+    for _ in range(50):
+        study.optimize(objective, n_trials=1)
 
     for trial in study.best_trials:
         print(f"{trial.values} wiht {trial.params}")
