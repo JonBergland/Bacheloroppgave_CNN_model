@@ -80,7 +80,7 @@ class VisionTransformerTrainer(BaseTrainer):
             self.check_only_see_metrics(only_see_metrics)
 
     def _initialize_model_components(self, depth: int = 6):
-        mlp_dim = self.embed_dim * 3
+        mlp_dim = self.embed_dim * 4
         self.model = VisionTransformer(
             img_size=self.img_size,
             patch_size=8,

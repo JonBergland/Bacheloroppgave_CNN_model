@@ -53,12 +53,12 @@ class TransformerEncoderBlock(nn.Module):
     
 class VisionTransformer(nn.Module):
     def __init__(self, 
-                 img_size=224, 
-                 patch_size=16, 
+                 img_size=64, 
+                 patch_size=8, 
                  num_classes=10, 
-                 embed_dim=768, 
-                 num_heads=8, 
-                 depth=6, 
+                 embed_dim=240, 
+                 num_heads=6, 
+                 depth=8, 
                  mlp_dim=None,
                  in_channels=1,
                  dropout=0.1):
