@@ -57,7 +57,7 @@ def objective(trial: optuna.Trial,):
         # ViT settings
         dropout_rate = trial.suggest_float("dropout_rate", 0.2, 0.6, step=0.01)
         label_smoothing = trial.suggest_float("label_smoothing", 0.0, 0.25, step=0.01)
-        weight_decay = trial.suggest_float("weight_decay", 1e-5, 1e-1, step=0.001)
+        weight_decay = trial.suggest_float("weight_decay", 1e-5, 1e-1, log=True)
         lr_rate = trial.suggest_float("lr_rate", 1e-5, 3e-3, log=True)
 
         lr_step_size = trial.suggest_int("lr_step_size", 3, 12)
@@ -443,16 +443,6 @@ if __name__ == '__main__':
         directions=directions
     )
 
-    # Queue best trials from previous run (sorted by accuracy, highest first)
-    # These trials lack vit_embed_dim, so we add a default value of 240
-    best_trials_to_queue = [
-        {'dropout_rate': 0.5, 'label_smoothing': 0.22, 'weight_decay': 0.068, 'lr_rate': 0.000321711060347216, 'lr_step_size': 6, 'lr_gamma': 0.46, 'vit_depth': 6, 'vit_embed_dim': 240},
-        {'dropout_rate': 0.5, 'label_smoothing': 0.1, 'weight_decay': 0.025, 'lr_rate': 2e-4, 'lr_step_size': 7, 'lr_gamma': 0.5, 'vit_depth': 8, 'vit_embed_dim': 240}
-    ]
-    
-    for trial_params in best_trials_to_queue:
-        study.enqueue_trial(trial_params)
-        print(f"Queued trial with vit_depth={trial_params['vit_depth']}, embed_dim={trial_params['vit_embed_dim']}")
 
     # run_server(storage_name)
 
