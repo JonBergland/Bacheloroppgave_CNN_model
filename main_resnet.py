@@ -205,10 +205,15 @@ def main(dataset_root: str,
             trainer.restore_best_model()
         trainer.evaluate()
 
-        trainer.save_model(model=trainer.model, save_optimizer=True)
+        mean_val = max(trainer.test_accuracies) if trainer.test_accuracies else 0.0
+        std_val = 0
+        
+
+        # trainer.save_model(model=trainer.model, save_optimizer=True)
         trainer.clear_model()
 
-        trainer.plot_metrics()
+        # trainer.plot_metrics()
+        return mean_val, std_val
 
 
 if __name__ == '__main__':
@@ -252,7 +257,7 @@ if __name__ == '__main__':
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     root = os.path.join(BASE_DIR, "dataset_preprocessed")
 
-    model_name = "resnet_9_no_data_augment.pth"
+    model_name = "new_resnet_9_no_data_augment.pth"
     save_dir = os.path.join(BASE_DIR, "saved_models")
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, model_name)
