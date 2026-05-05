@@ -84,7 +84,7 @@ def objective(trial: optuna.Trial,):
     print(f"vit_embed_dim: {embed_dim}")
     print("="*70 + "\n")
 
-    mean_val, std_val = main(
+    mean_val = main(
         dataset_root=root,
         model_name=model_name,
         epochs=epochs,
@@ -110,7 +110,7 @@ def objective(trial: optuna.Trial,):
         vit_depth=vit_depth,
     )
 
-    return mean_val, std_val
+    return mean_val
 
 
 def main(dataset_root: str,
@@ -220,7 +220,7 @@ def main(dataset_root: str,
         print(f"Fold models saved: {fold_model_paths}")
         # print(f"Final model saved: {final_save_path}")
 
-        return mean_val, std_val
+        return mean_val
     else:
         trainer.train()
         if use_val_split:
@@ -238,7 +238,6 @@ def main(dataset_root: str,
             mean_val = result["best_val_acc"]
         else:
             mean_val = result["test_acc"]
-        std_val = 0.0
         
 
         # trainer.save_model(model=trainer.model, save_optimizer=True)
@@ -250,7 +249,7 @@ def main(dataset_root: str,
         # trainer.clear_model()
         # return result
 
-        return mean_val, std_val
+        return mean_val
 
         
 
@@ -432,7 +431,7 @@ def run_embed_dim_sweep(
 if __name__ == '__main__':
     study_name = "ViT New Hyperparameter Study"
     storage_name = "sqlite:///{}.db".format(study_name)
-    directions = [StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE]
+    directions = [StudyDirection.MAXIMIZE]
     sampler = _create_sampler(seed=42)
 
     study = optuna.create_study(
@@ -448,7 +447,7 @@ if __name__ == '__main__':
 
     # print(study.trials)
 
-    for _ in range(50):
+    for _ in range(60):
         study.optimize(objective, n_trials=1)
 
     for trial in study.best_trials:
