@@ -64,6 +64,7 @@ def objective(trial: optuna.Trial,):
         lr_gamma = trial.suggest_float("lr_gamma", 0.3, 0.7, step=0.01)
         vit_depth = trial.suggest_int("vit_depth", 6, 10, step=2)
         embed_dim = trial.suggest_int("vit_embed_dim", 192, 480, step=48)
+        num_heads = trial.suggest_int("num_heads", 4, 8, step=2)
 
     else:
         raise ValueError(
@@ -82,6 +83,7 @@ def objective(trial: optuna.Trial,):
     print(f"lr_gamma: {lr_gamma:.4f}")
     print(f"vit_depth: {vit_depth}")
     print(f"vit_embed_dim: {embed_dim}")
+    print(f"num_heads: {num_heads}")
     print("="*70 + "\n")
 
     mean_val = main(
@@ -108,6 +110,7 @@ def objective(trial: optuna.Trial,):
         num_workers=num_workers,
         vit_embed_dim=embed_dim,
         vit_depth=vit_depth,
+        num_heads=num_heads
     )
 
     return mean_val
@@ -136,6 +139,7 @@ def main(dataset_root: str,
          num_workers: int = 1,
          vit_depth: int = 6,
          vit_embed_dim: int = 240,
+         num_heads: int = 6,
          show_plots: bool = True,
          use_val_split: bool = False):
 
@@ -167,6 +171,7 @@ def main(dataset_root: str,
         dataset_is_preprocessed=True,
         depth=vit_depth,
         embed_dim=vit_embed_dim,
+        num_heads=num_heads,
         use_val_split=use_val_split
     )
 
