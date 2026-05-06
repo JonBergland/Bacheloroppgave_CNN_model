@@ -34,7 +34,8 @@ class VisionTransformerTrainer(BaseTrainer):
                  dataset_is_preprocessed: bool = True,
                  depth: int = 6,
                  embed_dim: int = 288,
-                 patience: int = 25,
+                 num_heads: int = 6,
+                 patience: int = 40,
                  use_val_split: bool = True):
         super().__init__(
             dataset_root=dataset_root,
@@ -65,10 +66,11 @@ class VisionTransformerTrainer(BaseTrainer):
         self.lr_gamma = lr_gamma
         self.depth = depth
         self.embed_dim = embed_dim
+        self.num_heads = num_heads
         self.patience = patience
         self.patience_counter = 0
 
-        self._initialize_model_components(depth=depth, num_heads=4)
+        self._initialize_model_components(depth=depth, num_heads=num_heads)
 
         if (not self.use_kfold) and only_see_metrics and os.path.exists(self.save_path):
             try:
