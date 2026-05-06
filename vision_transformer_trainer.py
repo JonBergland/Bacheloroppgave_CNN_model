@@ -68,7 +68,7 @@ class VisionTransformerTrainer(BaseTrainer):
         self.patience = patience
         self.patience_counter = 0
 
-        self._initialize_model_components(depth=depth)
+        self._initialize_model_components(depth=depth, num_heads=4)
 
         if (not self.use_kfold) and only_see_metrics and os.path.exists(self.save_path):
             try:
@@ -79,14 +79,14 @@ class VisionTransformerTrainer(BaseTrainer):
         if not self.use_kfold:
             self.check_only_see_metrics(only_see_metrics)
 
-    def _initialize_model_components(self, depth: int = 6):
+    def _initialize_model_components(self, depth: int = 6, num_heads: int = 6):
         mlp_dim = self.embed_dim * 4
         self.model = VisionTransformer(
             img_size=self.img_size,
             patch_size=8,
             num_classes=len(self.classes),
             embed_dim=self.embed_dim,
-            num_heads=6,
+            num_heads=num_heads,
             depth=depth,
             mlp_dim=mlp_dim,
             in_channels=1,
