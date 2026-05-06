@@ -30,7 +30,7 @@ def objective(trial: optuna.Trial,):
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, model_name)
 
-    epochs = 60
+    epochs = 100
     batch_size = 64
     img_size = 64
     manual_seed = 42
@@ -445,6 +445,20 @@ if __name__ == '__main__':
         storage=storage_name,
         load_if_exists=True,
         directions=directions
+    )
+
+    study.enqueue_trial(
+        {
+            "dropout_rate": 0.2,
+            "label_smoothing": 0.25,
+            "weight_decay": 0.1,
+            "lr_rate": 0.0003637763387739878,
+            "lr_step_size": 12,
+            "lr_gamma": 0.6700000000000004,
+            "vit_depth": 6,
+            "vit_embed_dim": 192,
+            "num_heads": 6,
+        }
     )
 
 
