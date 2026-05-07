@@ -216,6 +216,7 @@ def main(dataset_root: str,
 
         # trainer.plot_metrics()
         return mean_val, std_val
+    
 def run_resnet_augmentation_matrix(
     dataset_root: str,
     save_dir: str,
@@ -361,33 +362,45 @@ if __name__ == '__main__':
 
     # 0.53,0.18,9.652079762372825e-05,0.0020919773917714357,11,0.2
 
-
-    main(
+    run_resnet_augmentation_matrix(
         dataset_root=root,
-        model_name=model_name,
+        save_dir=save_dir,
         epochs=epochs,
         lr_rate=lr_rate,
         batch_size=batch_size,
         img_size=img_size,
         manual_seed=manual_seed,
-        save_path=save_path,
-        only_see_metrics=only_see_metrics,
         dropout_rate=dropout_rate,
         label_smoothing=label_smoothing,
         weight_decay=weight_decay,
         lr_step_size=lr_step_size,
         lr_gamma=lr_gamma,
-        use_kfold=use_kfold,
-        n_splits=n_splits,
         test_ratio=test_ratio,
-        stratified_kfold=stratified_kfold,
-        augment_train_split=augment_train_split,
-        augment_test_split=augment_test_split,
         num_workers=num_workers,
-        vit_depth=vit_depth,
-        use_val_split=use_val_split,
     )
 
-
-
-
+    # main(
+    #     dataset_root=root,
+    #     model_name=model_name,
+    #     epochs=epochs,
+    #     lr_rate=lr_rate,
+    #     batch_size=batch_size,
+    #     img_size=img_size,
+    #     manual_seed=manual_seed,
+    #     save_path=save_path,
+    #     only_see_metrics=only_see_metrics,
+    #     dropout_rate=dropout_rate,
+    #     label_smoothing=label_smoothing,
+    #     weight_decay=weight_decay,
+    #     lr_step_size=lr_step_size,
+    #     lr_gamma=lr_gamma,
+    #     use_kfold=use_kfold,
+    #     n_splits=n_splits,
+    #     test_ratio=test_ratio,
+    #     stratified_kfold=stratified_kfold,
+    #     augment_train_split=augment_train_split,
+    #     augment_test_split=augment_test_split,
+    #     num_workers=num_workers,
+    #     vit_depth=vit_depth,
+    #     use_val_split=use_val_split,
+    # )
