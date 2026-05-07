@@ -56,7 +56,7 @@ def objective(trial: optuna.Trial,):
     elif "vit" in model_name.lower():
         # ViT settings
         dropout_rate = trial.suggest_float("dropout_rate", 0.2, 0.6, step=0.01)
-        label_smoothing = trial.suggest_float("label_smoothing", 0.0, 0.25, step=0.01)
+        label_smoothing = trial.suggest_float("label_smoothing", 0.0, 0.4, step=0.01)
         weight_decay = trial.suggest_float("weight_decay", 1e-5, 1e-1, log=True)
         lr_rate = trial.suggest_float("lr_rate", 1e-5, 3e-3, log=True)
 
@@ -256,279 +256,68 @@ def main(dataset_root: str,
 
         return mean_val
 
-        
-
-
-def run_double_descent_depth_sweep(
-    dataset_root: str,
-    save_dir: str,
-    epochs: int = 80,
-    batch_size: int = 64,
-    img_size: int = 64,
-    manual_seed: int = 42,
-    lr_rate: float = 2e-4,
-    dropout_rate: float = 0.3,
-    label_smoothing: float = 0.10,
-    weight_decay: float = 0.05,
-    lr_step_size: int = 7,
-    lr_gamma: float = 0.5,
-    test_ratio: float = 0.10,
-    num_workers: int = 1,
-    depth_values: list[int] | None = None,
-):
-    depth_values = depth_values or [2, 3, 4, 6, 8, 10, 12]
-    csv_path = os.path.join(save_dir, "vit_double_descent_depth_sweep.csv")
-
-    rows = []
-    for depth in depth_values:
-        model_name = f"vit_dd_depth_{depth}.pth"
-        save_path = os.path.join(save_dir, model_name)
-
-        print(f"\n=== Double Descent Sweep | depth={depth} ===")
-        metrics = main(
-            dataset_root=dataset_root,
-            model_name=model_name,
-            epochs=epochs,
-            lr_rate=lr_rate,
-            batch_size=batch_size,
-            img_size=img_size,
-            manual_seed=manual_seed,
-            save_path=save_path,
-            only_see_metrics=False,
-            dropout_rate=dropout_rate,
-            label_smoothing=label_smoothing,
-            weight_decay=weight_decay,
-            lr_step_size=lr_step_size,
-            lr_gamma=lr_gamma,
-            use_kfold=False,
-            n_splits=5,
-            test_ratio=test_ratio,
-            stratified_kfold=True,
-            augment_train_split=False,
-            augment_test_split=False,
-            num_workers=num_workers,
-            vit_depth=depth,
-            show_plots=False,
-        )
-
-        train_val_gap = metrics["best_train_acc"] - metrics["best_val_acc"]
-        row = {
-            "depth": depth,
-            "best_train_acc": float(metrics["best_train_acc"]),
-            "best_val_acc": float(metrics["best_val_acc"]),
-            "test_acc": float(metrics["test_acc"]),
-            "test_loss": float(metrics["test_loss"]),
-            "train_val_gap": float(train_val_gap),
-        }
-        rows.append(row)
-        print(
-            "Depth={depth} | best_train={train:.2f}% | best_val={val:.2f}% | "
-            "test={test:.2f}% | gap={gap:.2f}%".format(
-                depth=depth,
-                train=row["best_train_acc"],
-                val=row["best_val_acc"],
-                test=row["test_acc"],
-                gap=row["train_val_gap"],
-            )
-        )
-
-    with open(csv_path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(
-            f,
-            fieldnames=["depth", "best_train_acc", "best_val_acc", "test_acc", "test_loss", "train_val_gap"],
-        )
-        writer.writeheader()
-        writer.writerows(rows)
-
-    print(f"\nSaved double descent sweep results to: {csv_path}")
-    return rows
-
-
-def run_embed_dim_sweep(
-    dataset_root: str,
-    save_dir: str,
-    epochs: int = 80,
-    batch_size: int = 64,
-    img_size: int = 64,
-    manual_seed: int = 42,
-    lr_rate: float = 2e-4,
-    dropout_rate: float = 0.3,
-    label_smoothing: float = 0.10,
-    weight_decay: float = 0.05,
-    lr_step_size: int = 7,
-    lr_gamma: float = 0.5,
-    test_ratio: float = 0.10,
-    num_workers: int = 1,
-    embed_dim_values: list[int] | None = None,
-    depth: int = 8,
-):
-    embed_dim_values = embed_dim_values or [192, 240, 288, 336, 384, 432, 480]
-    csv_path = os.path.join(save_dir, "vit_embed_dim_sweep_depth_8.csv")
-
-    rows = []
-    for embed_dim in embed_dim_values:
-        model_name = f"vit_dd_embed_{embed_dim}.pth"
-        save_path = os.path.join(save_dir, model_name)
-
-        print(f"\n=== Embed-Dim Sweep | embed_dim={embed_dim}, depth={depth} ===")
-        metrics = main(
-            dataset_root=dataset_root,
-            model_name=model_name,
-            epochs=epochs,
-            lr_rate=lr_rate,
-            batch_size=batch_size,
-            img_size=img_size,
-            manual_seed=manual_seed,
-            save_path=save_path,
-            only_see_metrics=False,
-            dropout_rate=dropout_rate,
-            label_smoothing=label_smoothing,
-            weight_decay=weight_decay,
-            lr_step_size=lr_step_size,
-            lr_gamma=lr_gamma,
-            use_kfold=False,
-            n_splits=5,
-            test_ratio=test_ratio,
-            stratified_kfold=True,
-            augment_train_split=False,
-            augment_test_split=False,
-            num_workers=num_workers,
-            vit_depth=depth,
-            vit_embed_dim=embed_dim,
-            show_plots=False,
-        )
-
-        train_val_gap = metrics["best_train_acc"] - metrics["best_val_acc"]
-        row = {
-            "embed_dim": embed_dim,
-            "depth": depth,
-            "best_train_acc": float(metrics["best_train_acc"]),
-            "best_val_acc": float(metrics["best_val_acc"]),
-            "test_acc": float(metrics["test_acc"]),
-            "test_loss": float(metrics["test_loss"]),
-            "train_val_gap": float(train_val_gap),
-        }
-        rows.append(row)
-        print(
-            "embed_dim={embed} | depth={depth} | best_train={train:.2f}% | best_val={val:.2f}% | "
-            "test={test:.2f}% | gap={gap:.2f}%".format(
-                embed=embed_dim,
-                depth=depth,
-                train=row["best_train_acc"],
-                val=row["best_val_acc"],
-                test=row["test_acc"],
-                gap=row["train_val_gap"],
-            )
-        )
-
-    with open(csv_path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(
-            f,
-            fieldnames=["embed_dim", "depth", "best_train_acc", "best_val_acc", "test_acc", "test_loss", "train_val_gap"],
-        )
-        writer.writeheader()
-        writer.writerows(rows)
-
-    print(f"\nSaved embed-dim sweep results to: {csv_path}")
-    return rows
-
-
 if __name__ == '__main__':
-    study_name = "ViT New Hyperparameter Study"
-    storage_name = "sqlite:///{}.db".format(study_name)
-    directions = [StudyDirection.MAXIMIZE]
-    sampler = _create_sampler(seed=42)
+    # study_name = "ViT New New Hyperparameter Study"
+    # storage_name = "sqlite:///{}.db".format(study_name)
+    # directions = [StudyDirection.MAXIMIZE]
+    # sampler = _create_sampler(seed=42)
 
-    study = optuna.create_study(
-        study_name=study_name,
-        sampler=sampler,
-        storage=storage_name,
-        load_if_exists=True,
-        directions=directions
-    )
-
-    study.enqueue_trial(
-        {
-            "dropout_rate": 0.2,
-            "label_smoothing": 0.25,
-            "weight_decay": 0.1,
-            "lr_rate": 0.0003637763387739878,
-            "lr_step_size": 12,
-            "lr_gamma": 0.6700000000000004,
-            "vit_depth": 6,
-            "vit_embed_dim": 192,
-            "num_heads": 6,
-        }
-    )
-
-
-    # run_server(storage_name)
-
-    # print(study.trials)
-
-    for _ in range(60):
-        study.optimize(objective, n_trials=1)
-
-    for trial in study.best_trials:
-        print(f"{trial.values} wiht {trial.params}")
-    if study.best_trials:
-        best_trial = study.best_trials[0]
-        print(f"Best trial values: {best_trial.values} (params: {best_trial.params})")
-    else:
-        print("No completed trials yet.")
-
-    # Best Params:
-    # dropout_rate=0.48
-    # label_smoothing=0.30
-    # weight_decay=0.025
-    # lr_rate=1.17-4
-    # lr_step_size=7
-    # lr_gamma=0.4
-    # vit_depth = 6
-    # BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    # root = os.path.join(BASE_DIR, "dataset_preprocessed")
-
-    # model_name = "vit_64_no_data_augmentation.pth"
-    # save_dir = os.path.join(BASE_DIR, "saved_models")
-    # os.makedirs(save_dir, exist_ok=True)
-    # save_path = os.path.join(save_dir, model_name)
-
-    # from torchinfo import summary
-    # from vision_transformer import VisionTransformer
-
-    # model = VisionTransformer()
-    # summary(
-    #     model,
-    #     input_size=(1, 1, 64, 64),          # (batch, kanal, høyde, bredde)
-    #     col_names=["output_size", "kernel_size", "num_params"],
-    #     row_settings=["depth"]
+    # study = optuna.create_study(
+    #     study_name=study_name,
+    #     sampler=sampler,
+    #     storage=storage_name,
+    #     load_if_exists=True,
+    #     directions=directions
     # )
 
-    # epochs = 100
-    # batch_size = 64
-    # img_size = 64
-    # manual_seed = 42
-    # only_see_metrics = True
-    # use_kfold = False
-    # n_splits = 5
-    # test_ratio = 0.10
-    # stratified_kfold = True
-    # augment_train_split = True
-    # augment_test_split = True
-    # num_workers = 1
 
-    # dropout_rate = 0.5
-    # label_smoothing = 0.10
-    # weight_decay = 0.025
-    # lr_rate = 2e-4
-    # lr_step_size = 7
-    # lr_gamma = 0.5
-    # vit_depth = 8
-    # vit_embed_dim = 240
-    # use_val_split = False
+    # # run_server(storage_name)
 
-    # # #0.48 / 30.2 / 0.025 / 1.66e-4 / 7 / 0.41 / depth 6
-    # # #0.47 / 0.28 / 0.042 / 2.58e-4 / 7 / 0.47 / depth 6
+    # # print(study.trials)
+
+    # for _ in range(60):
+    #     study.optimize(objective, n_trials=1)
+
+    # for trial in study.best_trials:
+    #     print(f"{trial.values} wiht {trial.params}")
+    # if study.best_trials:
+    #     best_trial = study.best_trials[0]
+    #     print(f"Best trial values: {best_trial.values} (params: {best_trial.params})")
+    # else:
+    #     print("No completed trials yet.")
+
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    root = os.path.join(BASE_DIR, "dataset_preprocessed")
+
+    model_name = "vit_8_no_data_augmentation.pth"
+    save_dir = os.path.join(BASE_DIR, "saved_models")
+    os.makedirs(save_dir, exist_ok=True)
+    save_path = os.path.join(save_dir, model_name)
+
+    epochs = 100
+    batch_size = 64
+    img_size = 64
+    manual_seed = 42
+    only_see_metrics = False
+    use_kfold = False
+    n_splits = 5
+    test_ratio = 0.20
+    stratified_kfold = True
+    augment_train_split = True
+    augment_test_split = True
+    num_workers = 1
+
+    dropout_rate = 0.2
+    label_smoothing = 0.25
+    weight_decay = 0.001
+    lr_rate = 2e-4
+    lr_step_size = 9
+    lr_gamma = 0.7
+    vit_depth = 6
+    vit_embed_dim = 192
+    num_heads = 8
+    use_val_split = False
+
 
     # # # Show transformations
     # from data_processing.data_augmentation import DataAugmentation
@@ -549,71 +338,31 @@ if __name__ == '__main__':
     # include_base=True,
     # )
 
-    # run_double_descent = False
-    # run_embed_dim_sweep_mode = False
-
-    # if run_double_descent:
-    #     run_double_descent_depth_sweep(
-    #         dataset_root=root,
-    #         save_dir=save_dir,
-    #         epochs=80,
-    #         batch_size=batch_size,
-    #         img_size=img_size,
-    #         manual_seed=manual_seed,
-    #         lr_rate=lr_rate,
-    #         dropout_rate=dropout_rate,
-    #         label_smoothing=label_smoothing,
-    #         weight_decay=weight_decay,
-    #         lr_step_size=lr_step_size,
-    #         lr_gamma=lr_gamma,
-    #         test_ratio=test_ratio,
-    #         num_workers=num_workers,
-    #         depth_values=[2, 3, 4, 6, 8, 10, 12],
-    #     )
-    # elif run_embed_dim_sweep_mode:
-    #     run_embed_dim_sweep(
-    #         dataset_root=root,
-    #         save_dir=save_dir,
-    #         epochs=80,
-    #         batch_size=batch_size,
-    #         img_size=img_size,
-    #         manual_seed=manual_seed,
-    #         lr_rate=lr_rate,
-    #         dropout_rate=dropout_rate,
-    #         label_smoothing=label_smoothing,
-    #         weight_decay=weight_decay,
-    #         lr_step_size=lr_step_size,
-    #         lr_gamma=lr_gamma,
-    #         test_ratio=test_ratio,
-    #         num_workers=num_workers,
-    #         embed_dim_values=[192, 240, 288, 336, 384, 432, 480],
-    #         depth=8,
-    #     )
-    # else:
-    #     main(
-    #     dataset_root=root,
-    #     model_name=model_name,
-    #     epochs=epochs,
-    #     lr_rate=lr_rate,
-    #     batch_size=batch_size,
-    #     img_size=img_size,
-    #     manual_seed=manual_seed,
-    #     save_path=save_path,
-    #     only_see_metrics=only_see_metrics,
-    #     dropout_rate=dropout_rate,
-    #     label_smoothing=label_smoothing,
-    #     weight_decay=weight_decay,
-    #     lr_step_size=lr_step_size,
-    #     lr_gamma=lr_gamma,
-    #     use_kfold=use_kfold,
-    #     n_splits=n_splits,
-    #     test_ratio=test_ratio,
-    #     stratified_kfold=stratified_kfold,
-    #     augment_train_split=augment_train_split,
-    #     augment_test_split=augment_test_split,
-    #     num_workers=num_workers,
-    #     vit_depth=vit_depth,
-    #     vit_embed_dim=vit_embed_dim,
-    #     show_plots=True,
-    #     use_val_split=use_val_split,
-    # )
+    main(
+        dataset_root=root,
+        model_name=model_name,
+        epochs=epochs,
+        lr_rate=lr_rate,
+        batch_size=batch_size,
+        img_size=img_size,
+        manual_seed=manual_seed,
+        save_path=save_path,
+        only_see_metrics=only_see_metrics,
+        dropout_rate=dropout_rate,
+        label_smoothing=label_smoothing,
+        weight_decay=weight_decay,
+        lr_step_size=lr_step_size,
+        lr_gamma=lr_gamma,
+        use_kfold=use_kfold,
+        n_splits=n_splits,
+        test_ratio=test_ratio,
+        stratified_kfold=stratified_kfold,
+        augment_train_split=augment_train_split,
+        augment_test_split=augment_test_split,
+        num_workers=num_workers,
+        vit_depth=vit_depth,
+        vit_embed_dim=vit_embed_dim,
+        num_heads=num_heads,
+        show_plots=True,
+        use_val_split=use_val_split,
+    )
