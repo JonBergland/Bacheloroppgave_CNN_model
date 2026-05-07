@@ -34,6 +34,7 @@ class ResnetTrainer(BaseTrainer):
                  num_workers: int = 1,
                  augment_train_split: bool = False,
                  augment_test_split: bool = False,
+                 test_noise_level: str | None = None,
                  dataset_is_preprocessed: bool = True,
                  depth: int = 6,
                  patience: int = 15,
@@ -56,6 +57,7 @@ class ResnetTrainer(BaseTrainer):
             augment_train_split=augment_train_split,
             augment_test_split=augment_test_split,
             dataset_is_preprocessed=dataset_is_preprocessed,
+            test_noise_level=test_noise_level,
             use_val_split=use_val_split,
         )
 

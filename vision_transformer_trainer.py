@@ -28,6 +28,7 @@ class VisionTransformerTrainer(BaseTrainer):
                  n_splits: int = 5,
                  test_ratio: float = 0.15,
                  stratified_kfold: bool = True,
+                 test_noise_level: str | None = None,
                  num_workers: int = 1,
                  augment_train_split: bool = False,
                  augment_test_split: bool = False,
@@ -55,6 +56,7 @@ class VisionTransformerTrainer(BaseTrainer):
             augment_train_split=augment_train_split,
             augment_test_split=augment_test_split,
             dataset_is_preprocessed=dataset_is_preprocessed,
+            test_noise_level=test_noise_level,
             use_val_split=use_val_split,
         )
 

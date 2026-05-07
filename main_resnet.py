@@ -116,7 +116,8 @@ def main(dataset_root: str,
          augment_test_split: bool = False,
          num_workers: int = 1,
          vit_depth: int = 6,
-         use_val_split: bool = False):
+         use_val_split: bool = False,
+         test_noise_level: str | None = None):
 
     model_name_lower = model_name.lower()
     trainer_class = VisionTransformerTrainer if "vit" in model_name_lower else ResnetTrainer
@@ -145,7 +146,8 @@ def main(dataset_root: str,
         num_workers=num_workers,
         dataset_is_preprocessed=True,
         depth=vit_depth,
-        use_val_split=use_val_split
+        use_val_split=use_val_split,
+        test_noise_level=test_noise_level,
     )
 
     if use_kfold:
@@ -214,6 +216,79 @@ def main(dataset_root: str,
 
         # trainer.plot_metrics()
         return mean_val, std_val
+def run_resnet_augmentation_matrix(
+    dataset_root: str,
+    save_dir: str,
+    epochs: int = 50,
+    batch_size: int = 64,
+    img_size: int = 64,
+    manual_seed: int = 42,
+    lr_rate: float = 2.0e-3,
+    dropout_rate: float = 0.5,
+    label_smoothing: float = 0.2,
+    weight_decay: float = 1.0e-4,
+    lr_step_size: int = 11,
+    lr_gamma: float = 0.2,
+    test_ratio: float = 0.20,
+    num_workers: int = 1,
+):
+    """Run ResNet with combinations of train augmentation (on/off)
+    and test augmentation intensity (none, light, medium, strong).
+
+    Creates descriptive save names and returns a list of result dicts.
+    """
+
+    os.makedirs(save_dir, exist_ok=True)
+    results = []
+    test_levels = ["none", "light", "medium", "strong"]
+
+    for train_aug in (False, True):
+        for test_level in test_levels:
+            augment_train_split = train_aug
+            augment_test_split = False if test_level == "none" else True
+
+            suffix = f"trainAug_{'on' if augment_train_split else 'off'}_test_{test_level}"
+            model_name = f"resnet_{suffix}.pth"
+            save_path = os.path.join(save_dir, model_name)
+
+            print(f"\n=== Running: {suffix} | save: {save_path} ===")
+
+            mean_val, std_val = main(
+                dataset_root=dataset_root,
+                model_name=model_name,
+                epochs=epochs,
+                lr_rate=lr_rate,
+                batch_size=batch_size,
+                img_size=img_size,
+                manual_seed=manual_seed,
+                save_path=save_path,
+                only_see_metrics=False,
+                dropout_rate=dropout_rate,
+                label_smoothing=label_smoothing,
+                weight_decay=weight_decay,
+                lr_step_size=lr_step_size,
+                lr_gamma=lr_gamma,
+                use_kfold=False,
+                n_splits=5,
+                test_ratio=test_ratio,
+                stratified_kfold=False,
+                augment_train_split=augment_train_split,
+                augment_test_split=augment_test_split,
+                test_noise_level=test_level,
+                num_workers=num_workers,
+                vit_depth=6,
+                use_val_split=False,
+            )
+
+            results.append({
+                "train_aug": augment_train_split,
+                "test_level": test_level,
+                "model": save_path,
+                "mean_val": mean_val,
+                "std_val": std_val,
+            })
+
+    return results
 
 
 if __name__ == '__main__':
@@ -266,7 +341,7 @@ if __name__ == '__main__':
     batch_size = 64
     img_size = 64
     manual_seed = 42
-    only_see_metrics = False
+    only_see_metrics = True
     use_kfold = False
     n_splits = 5
     test_ratio = 0.20 # Use 80/20 train/test split

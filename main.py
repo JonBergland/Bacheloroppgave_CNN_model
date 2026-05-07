@@ -289,7 +289,7 @@ if __name__ == '__main__':
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     root = os.path.join(BASE_DIR, "dataset_preprocessed")
 
-    model_name = "vit_8_no_data_augmentation.pth"
+    model_name = "new_vit_8_no_data_augmentation.pth"
     save_dir = os.path.join(BASE_DIR, "saved_models")
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, model_name)
@@ -298,7 +298,7 @@ if __name__ == '__main__':
     batch_size = 64
     img_size = 64
     manual_seed = 42
-    only_see_metrics = False
+    only_see_metrics = True
     use_kfold = False
     n_splits = 5
     test_ratio = 0.20

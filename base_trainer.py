@@ -31,6 +31,7 @@ class BaseTrainer:
                  augment_train_split: bool = False,
                  augment_test_split: bool = False,
                  dataset_is_preprocessed: bool = True,
+                 test_noise_level: str | None = None,
                  use_val_split: bool = True):
 
         self.epochs = epochs
@@ -56,6 +57,19 @@ class BaseTrainer:
         self.generator = torch.Generator().manual_seed(manual_seed)
 
         self.split_transform_options = copy.deepcopy(DEFAULT_SPLIT_TRANSFORMS)
+        if test_noise_level is not None:
+            noise_level = str(test_noise_level).lower()
+            self.split_transform_options["test"]["noise_light"] = False
+            self.split_transform_options["test"]["noise_medium"] = False
+            self.split_transform_options["test"]["noise_strong"] = False
+            if noise_level == "light":
+                self.split_transform_options["test"]["noise_light"] = True
+            elif noise_level == "medium":
+                self.split_transform_options["test"]["noise_medium"] = True
+            elif noise_level == "strong":
+                self.split_transform_options["test"]["noise_strong"] = True
+            elif noise_level == "none":
+                pass
 
         self.dataset_splitter = DatasetSplitter(
             dataset_root=dataset_root,
