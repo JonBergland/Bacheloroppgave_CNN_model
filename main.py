@@ -257,112 +257,112 @@ def main(dataset_root: str,
         return mean_val
 
 if __name__ == '__main__':
-    # study_name = "ViT New New Hyperparameter Study"
-    # storage_name = "sqlite:///{}.db".format(study_name)
-    # directions = [StudyDirection.MAXIMIZE]
-    # sampler = _create_sampler(seed=42)
+    study_name = "ViT New New Hyperparameter Study"
+    storage_name = "sqlite:///{}.db".format(study_name)
+    directions = [StudyDirection.MAXIMIZE]
+    sampler = _create_sampler(seed=42)
 
-    # study = optuna.create_study(
-    #     study_name=study_name,
-    #     sampler=sampler,
-    #     storage=storage_name,
-    #     load_if_exists=True,
-    #     directions=directions
-    # )
-
-
-    # # run_server(storage_name)
-
-    # # print(study.trials)
-
-    # for _ in range(60):
-    #     study.optimize(objective, n_trials=1)
-
-    # for trial in study.best_trials:
-    #     print(f"{trial.values} wiht {trial.params}")
-    # if study.best_trials:
-    #     best_trial = study.best_trials[0]
-    #     print(f"Best trial values: {best_trial.values} (params: {best_trial.params})")
-    # else:
-    #     print("No completed trials yet.")
-
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    root = os.path.join(BASE_DIR, "dataset_preprocessed")
-
-    model_name = "new_vit_8_no_data_augmentation.pth"
-    save_dir = os.path.join(BASE_DIR, "saved_models")
-    os.makedirs(save_dir, exist_ok=True)
-    save_path = os.path.join(save_dir, model_name)
-
-    epochs = 100
-    batch_size = 64
-    img_size = 64
-    manual_seed = 42
-    only_see_metrics = True
-    use_kfold = False
-    n_splits = 5
-    test_ratio = 0.20
-    stratified_kfold = True
-    augment_train_split = True
-    augment_test_split = True
-    num_workers = 1
-
-    dropout_rate = 0.2
-    label_smoothing = 0.25
-    weight_decay = 0.001
-    lr_rate = 2e-4
-    lr_step_size = 9
-    lr_gamma = 0.7
-    vit_depth = 6
-    vit_embed_dim = 192
-    num_heads = 8
-    use_val_split = False
-
-
-    # # # Show transformations
-    # from data_processing.data_augmentation import DataAugmentation
-
-    # aug = DataAugmentation(img_size=64, output_channels=1)
-    # aug.showAugmentedSamples(
-    # image_path="dataset_preprocessed/banana/0000.jpg",
-    # horizontal_flip=True,
-    # vertical_flip=False,
-    # translation=True,
-    # blur=False,
-    # random_erasing=False,
-    # noise_light=True,
-    # noise_medium=True,
-    # noise_strong=True,
-    # scale=True,
-    # preprocessed_input=True,
-    # include_base=True,
-    # )
-
-    main(
-        dataset_root=root,
-        model_name=model_name,
-        epochs=epochs,
-        lr_rate=lr_rate,
-        batch_size=batch_size,
-        img_size=img_size,
-        manual_seed=manual_seed,
-        save_path=save_path,
-        only_see_metrics=only_see_metrics,
-        dropout_rate=dropout_rate,
-        label_smoothing=label_smoothing,
-        weight_decay=weight_decay,
-        lr_step_size=lr_step_size,
-        lr_gamma=lr_gamma,
-        use_kfold=use_kfold,
-        n_splits=n_splits,
-        test_ratio=test_ratio,
-        stratified_kfold=stratified_kfold,
-        augment_train_split=augment_train_split,
-        augment_test_split=augment_test_split,
-        num_workers=num_workers,
-        vit_depth=vit_depth,
-        vit_embed_dim=vit_embed_dim,
-        num_heads=num_heads,
-        show_plots=True,
-        use_val_split=use_val_split,
+    study = optuna.create_study(
+        study_name=study_name,
+        sampler=sampler,
+        storage=storage_name,
+        load_if_exists=True,
+        directions=directions
     )
+
+
+    # run_server(storage_name)
+
+    # print(study.trials)
+
+    for _ in range(60):
+        study.optimize(objective, n_trials=1)
+
+    for trial in study.best_trials:
+        print(f"{trial.values} wiht {trial.params}")
+    if study.best_trials:
+        best_trial = study.best_trials[0]
+        print(f"Best trial values: {best_trial.values} (params: {best_trial.params})")
+    else:
+        print("No completed trials yet.")
+
+    # BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    # root = os.path.join(BASE_DIR, "dataset_preprocessed")
+
+    # model_name = "new_vit_8_no_data_augmentation.pth"
+    # save_dir = os.path.join(BASE_DIR, "saved_models")
+    # os.makedirs(save_dir, exist_ok=True)
+    # save_path = os.path.join(save_dir, model_name)
+
+    # epochs = 100
+    # batch_size = 64
+    # img_size = 64
+    # manual_seed = 42
+    # only_see_metrics = True
+    # use_kfold = False
+    # n_splits = 5
+    # test_ratio = 0.20
+    # stratified_kfold = True
+    # augment_train_split = True
+    # augment_test_split = True
+    # num_workers = 1
+
+    # dropout_rate = 0.2
+    # label_smoothing = 0.25
+    # weight_decay = 0.001
+    # lr_rate = 2e-4
+    # lr_step_size = 9
+    # lr_gamma = 0.7
+    # vit_depth = 6
+    # vit_embed_dim = 192
+    # num_heads = 8
+    # use_val_split = False
+
+
+    # # # # Show transformations
+    # # from data_processing.data_augmentation import DataAugmentation
+
+    # # aug = DataAugmentation(img_size=64, output_channels=1)
+    # # aug.showAugmentedSamples(
+    # # image_path="dataset_preprocessed/banana/0000.jpg",
+    # # horizontal_flip=True,
+    # # vertical_flip=False,
+    # # translation=True,
+    # # blur=False,
+    # # random_erasing=False,
+    # # noise_light=True,
+    # # noise_medium=True,
+    # # noise_strong=True,
+    # # scale=True,
+    # # preprocessed_input=True,
+    # # include_base=True,
+    # # )
+
+    # main(
+    #     dataset_root=root,
+    #     model_name=model_name,
+    #     epochs=epochs,
+    #     lr_rate=lr_rate,
+    #     batch_size=batch_size,
+    #     img_size=img_size,
+    #     manual_seed=manual_seed,
+    #     save_path=save_path,
+    #     only_see_metrics=only_see_metrics,
+    #     dropout_rate=dropout_rate,
+    #     label_smoothing=label_smoothing,
+    #     weight_decay=weight_decay,
+    #     lr_step_size=lr_step_size,
+    #     lr_gamma=lr_gamma,
+    #     use_kfold=use_kfold,
+    #     n_splits=n_splits,
+    #     test_ratio=test_ratio,
+    #     stratified_kfold=stratified_kfold,
+    #     augment_train_split=augment_train_split,
+    #     augment_test_split=augment_test_split,
+    #     num_workers=num_workers,
+    #     vit_depth=vit_depth,
+    #     vit_embed_dim=vit_embed_dim,
+    #     num_heads=num_heads,
+    #     show_plots=True,
+    #     use_val_split=use_val_split,
+    # )
