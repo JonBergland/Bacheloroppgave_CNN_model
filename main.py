@@ -141,7 +141,8 @@ def main(dataset_root: str,
          vit_embed_dim: int = 240,
          num_heads: int = 6,
          show_plots: bool = True,
-         use_val_split: bool = False):
+         use_val_split: bool = False,
+         test_noise_level: str | None = None):
 
     model_name_lower = model_name.lower()
     trainer_class = VisionTransformerTrainer if "vit" in model_name_lower else ResnetTrainer
@@ -172,7 +173,8 @@ def main(dataset_root: str,
         depth=vit_depth,
         embed_dim=vit_embed_dim,
         num_heads=num_heads,
-        use_val_split=use_val_split
+        use_val_split=use_val_split,
+        test_noise_level=test_noise_level
     )
 
     if use_kfold:
@@ -256,56 +258,139 @@ def main(dataset_root: str,
 
         return mean_val
 
-if __name__ == '__main__':
-    study_name = "ViT New New Hyperparameter Study"
-    storage_name = "sqlite:///{}.db".format(study_name)
-    directions = [StudyDirection.MAXIMIZE]
-    sampler = _create_sampler(seed=42)
+def run_vit_augmentation_matrix(
+    dataset_root: str,
+    save_dir: str,
+    epochs: int = 100,
+    batch_size: int = 64,
+    img_size: int = 64,
+    manual_seed: int = 42,
+    lr_rate: float = 0.000364,
+    dropout_rate: float = 0.2,
+    label_smoothing: float = 0.25,
+    weight_decay: float = 0.1,
+    lr_step_size: int = 12,
+    lr_gamma: float = 0.67,
+    test_ratio: float = 0.20,
+    num_workers: int = 1,
+    vit_depth: int = 6,
+    vit_embed_dim: int = 192,
+    num_heads: int = 6,
+):
+    """Run ViT with combinations of train augmentation (on/off)
+    and test augmentation intensity (none, light, medium, strong).
 
-    study = optuna.create_study(
-        study_name=study_name,
-        sampler=sampler,
-        storage=storage_name,
-        load_if_exists=True,
-        directions=directions
-    )
+    Creates descriptive save names and returns a list of result dicts.
+    """
+
+    os.makedirs(save_dir, exist_ok=True)
+    results = []
+    test_levels = ["none", "light", "medium", "strong"]
+
+    for train_aug in (False, True):
+        for test_level in test_levels:
+            augment_train_split = train_aug
+            augment_test_split = False if test_level == "none" else True
+
+            suffix = f"trainAug_{'on' if augment_train_split else 'off'}_test_{test_level}"
+            model_name = f"vit_{suffix}.pth"
+            save_path = os.path.join(save_dir, model_name)
+
+            print(f"\n=== Running: {suffix} | save: {save_path} ===")
+
+            mean_val = main(
+                dataset_root=dataset_root,
+                model_name=model_name,
+                epochs=epochs,
+                lr_rate=lr_rate,
+                batch_size=batch_size,
+                img_size=img_size,
+                manual_seed=manual_seed,
+                save_path=save_path,
+                only_see_metrics=False,
+                dropout_rate=dropout_rate,
+                label_smoothing=label_smoothing,
+                weight_decay=weight_decay,
+                lr_step_size=lr_step_size,
+                lr_gamma=lr_gamma,
+                use_kfold=False,
+                n_splits=5,
+                test_ratio=test_ratio,
+                stratified_kfold=False,
+                augment_train_split=augment_train_split,
+                augment_test_split=augment_test_split,
+                test_noise_level=test_level,
+                num_workers=num_workers,
+                vit_depth=vit_depth,
+                vit_embed_dim=vit_embed_dim,
+                num_heads=num_heads,
+                use_val_split=False,
+            )
+
+            results.append({
+                "train_aug": augment_train_split,
+                "test_level": test_level,
+                "model": save_path,
+                "mean_val": mean_val,
+            })
+
+    return results
+
+if __name__ == '__main__':
+    # study_name = "ViT New New Hyperparameter Study"
+    # storage_name = "sqlite:///{}.db".format(study_name)
+    # directions = [StudyDirection.MAXIMIZE]
+    # sampler = _create_sampler(seed=42)
+
+    # study = optuna.create_study(
+    #     study_name=study_name,
+    #     sampler=sampler,
+    #     storage=storage_name,
+    #     load_if_exists=True,
+    #     directions=directions
+    # )
 
 
     # run_server(storage_name)
 
     # print(study.trials)
 
-    for _ in range(60):
-        study.optimize(objective, n_trials=1)
+    # for _ in range(60):
+    #     study.optimize(objective, n_trials=1)
 
-    for trial in study.best_trials:
-        print(f"{trial.values} wiht {trial.params}")
-    if study.best_trials:
-        best_trial = study.best_trials[0]
-        print(f"Best trial values: {best_trial.values} (params: {best_trial.params})")
-    else:
-        print("No completed trials yet.")
+    # for trial in study.best_trials:
+    #     print(f"{trial.values} wiht {trial.params}")
+    # if study.best_trials:
+    #     best_trial = study.best_trials[0]
+    #     print(f"Best trial values: {best_trial.values} (params: {best_trial.params})")
+    # else:
+    #     print("No completed trials yet.")
 
-    # BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    # root = os.path.join(BASE_DIR, "dataset_preprocessed")
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    root = os.path.join(BASE_DIR, "dataset_preprocessed")
 
-    # model_name = "new_vit_8_no_data_augmentation.pth"
-    # save_dir = os.path.join(BASE_DIR, "saved_models")
-    # os.makedirs(save_dir, exist_ok=True)
-    # save_path = os.path.join(save_dir, model_name)
+    model_name = "new_vit_8_no_data_augmentation.pth"
+    save_dir = os.path.join(BASE_DIR, "saved_models")
+    os.makedirs(save_dir, exist_ok=True)
+    save_path = os.path.join(save_dir, model_name)
 
-    # epochs = 100
-    # batch_size = 64
-    # img_size = 64
-    # manual_seed = 42
-    # only_see_metrics = True
-    # use_kfold = False
-    # n_splits = 5
-    # test_ratio = 0.20
-    # stratified_kfold = True
-    # augment_train_split = True
-    # augment_test_split = True
-    # num_workers = 1
+    epochs = 100
+    batch_size = 64
+    img_size = 64
+    manual_seed = 42
+    only_see_metrics = True
+    use_kfold = False
+    n_splits = 5
+    test_ratio = 0.20
+    stratified_kfold = True
+    augment_train_split = True
+    augment_test_split = True
+    num_workers = 1
+
+    run_vit_augmentation_matrix(
+        dataset_root=root,
+        save_dir=save_dir
+    )
 
     # dropout_rate = 0.2
     # label_smoothing = 0.25
