@@ -37,7 +37,7 @@ class ResnetTrainer(BaseTrainer):
                  test_noise_level: str | None = None,
                  dataset_is_preprocessed: bool = True,
                  depth: int = 6,
-                 patience: int = 15,
+                 patience: int = 50,
                  use_val_split: bool = True):
         super().__init__(
             dataset_root=dataset_root,
