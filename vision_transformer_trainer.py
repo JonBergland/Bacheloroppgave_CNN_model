@@ -36,7 +36,7 @@ class VisionTransformerTrainer(BaseTrainer):
                  depth: int = 6,
                  embed_dim: int = 288,
                  num_heads: int = 6,
-                 patience: int = 40,
+                 patience: int = 100,
                  use_val_split: bool = True):
         super().__init__(
             dataset_root=dataset_root,

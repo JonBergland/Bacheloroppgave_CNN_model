@@ -247,7 +247,7 @@ def main(dataset_root: str,
             mean_val = result["test_acc"]
         
 
-        # trainer.save_model(model=trainer.model, save_optimizer=True)
+        trainer.save_model(model=trainer.model, save_optimizer=True)
         trainer.clear_model()
 
         # trainer.save_model(model=trainer.model, save_optimizer=True)
