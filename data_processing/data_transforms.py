@@ -13,6 +13,7 @@ DEFAULT_SPLIT_TRANSFORMS = {
 		"noise_medium": False,
 		"noise_strong": False,
 		"scale": True,
+		"exclude_base": False,
 	},
 	"val": {
 		"horizontal_flip": False,
@@ -24,6 +25,7 @@ DEFAULT_SPLIT_TRANSFORMS = {
 		"noise_medium": False,
 		"noise_strong": False,
 		"scale": False,
+		"exclude_base": False,
 	},
 	"test": {
 		"horizontal_flip": False,
@@ -35,5 +37,6 @@ DEFAULT_SPLIT_TRANSFORMS = {
 		"noise_medium": False,
 		"noise_strong": False,
 		"scale": False,
+		"exclude_base": False,
 	},
 }

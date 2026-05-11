@@ -164,31 +164,38 @@ class DatasetSplitter:
         Returns:
             Dataset (either ImageFolder or ConcatDataset if augmentations applied)
         """
-        datasets = []
-
+        # If augment is False, just return the base subset.
         subset_dataset = self._create_subset(indices)
-        datasets.append(subset_dataset)
+        if not augment:
+            return subset_dataset
 
-        if augment:
-            default_options = {
-                "horizontal_flip": False,
-                "vertical_flip": False,
-                "translation": False,
-                "blur": False,
-                "random_erasing": False,
-                "noise_light": False,
-                "noise_medium": False,
-                "noise_strong": False,
-                "scale": False,
-            }
-            options = default_options if transform_options is None else {**default_options, **transform_options}
-            options["preprocessed_input"] = self.dataset_is_preprocessed
+        # Build options for augmentation, merging defaults with provided transform options.
+        default_options = {
+            "horizontal_flip": False,
+            "vertical_flip": False,
+            "translation": False,
+            "blur": False,
+            "random_erasing": False,
+            "noise_light": False,
+            "noise_medium": False,
+            "noise_strong": False,
+            "scale": False,
+            "exclude_base": False,
+        }
+        options = default_options if transform_options is None else {**default_options, **transform_options}
+        options["preprocessed_input"] = self.dataset_is_preprocessed
 
-            augmentation_transforms = self.data_augmentation.getDataAugmentations(**options)
+        datasets: list[Dataset] = []
 
-            for transform in augmentation_transforms:
-                aug_subset = self._create_subset(indices, transform=transform)
-                datasets.append(aug_subset)
+        # Only include the original base subset if not explicitly excluded.
+        if not options.get("exclude_base", False):
+            datasets.append(subset_dataset)
+
+        # Append augmented subsets for each augmentation transform.
+        augmentation_transforms = self.data_augmentation.getDataAugmentations(**options)
+        for transform in augmentation_transforms:
+            aug_subset = self._create_subset(indices, transform=transform)
+            datasets.append(aug_subset)
 
         if len(datasets) == 1:
             return datasets[0]

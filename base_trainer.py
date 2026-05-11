@@ -70,6 +70,11 @@ class BaseTrainer:
                 self.split_transform_options["test"]["noise_strong"] = True
             elif noise_level == "none":
                 pass
+            # If a test noise level is requested (light/medium/strong),
+            # allow caller to exclude the base (clean) test subset so the
+            # test split only contains noisy variants.
+            if noise_level in ("light", "medium", "strong"):
+                self.split_transform_options["test"]["exclude_base"] = True
 
         self.dataset_splitter = DatasetSplitter(
             dataset_root=dataset_root,
