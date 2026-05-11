@@ -211,7 +211,7 @@ def main(dataset_root: str,
         std_val = 0
         
 
-        # trainer.save_model(model=trainer.model, save_optimizer=True)
+        trainer.save_model(model=trainer.model, save_optimizer=True)
         trainer.clear_model()
 
         # trainer.plot_metrics()
