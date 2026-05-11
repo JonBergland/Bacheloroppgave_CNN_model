@@ -47,6 +47,7 @@ class DataAugmentation:
         noise_medium: bool = False,
         noise_strong: bool = False,
         scale: bool = False,
+        exclude_base: bool = False,
     ):
         named_transforms = []
 
@@ -165,7 +166,8 @@ class DataAugmentation:
         noise_light: bool = False,
         noise_medium: bool = False,
         noise_strong: bool = False,
-        scale: bool = False
+        scale: bool = False,
+        exclude_base: bool = False
     ):
         named_transforms = self._build_named_augmentations(
             horizontal_flip=horizontal_flip,
@@ -178,6 +180,7 @@ class DataAugmentation:
             noise_medium=noise_medium,
             noise_strong=noise_strong,
             scale=scale,
+            exclude_base=exclude_base,
         )
         return [transform for _, transform in named_transforms]
 

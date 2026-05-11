@@ -164,12 +164,10 @@ class DatasetSplitter:
         Returns:
             Dataset (either ImageFolder or ConcatDataset if augmentations applied)
         """
-        # If augment is False, just return the base subset.
         subset_dataset = self._create_subset(indices)
         if not augment:
             return subset_dataset
 
-        # Build options for augmentation, merging defaults with provided transform options.
         default_options = {
             "horizontal_flip": False,
             "vertical_flip": False,
@@ -187,7 +185,6 @@ class DatasetSplitter:
 
         datasets: list[Dataset] = []
 
-        # Only include the original base subset if not explicitly excluded.
         if not options.get("exclude_base", False):
             datasets.append(subset_dataset)
 
