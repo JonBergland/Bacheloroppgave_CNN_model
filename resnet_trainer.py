@@ -87,7 +87,7 @@ class ResnetTrainer(BaseTrainer):
         self.model.to(self.device)
 
         self.criterion = nn.CrossEntropyLoss(label_smoothing=self.label_smoothing)
-        self.optimizer = optim.Adam(
+        self.optimizer = optim.AdamW(
             self.model.parameters(),
             lr=self.lr_rate,
             amsgrad=True,
