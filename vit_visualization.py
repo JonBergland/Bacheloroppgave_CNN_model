@@ -67,7 +67,7 @@ def _plot_group(ax, summaries: list[RunSummary], title: str):
         if not summary.test_accuracy_curve:
             continue
         epochs = list(range(1, len(summary.test_accuracy_curve) + 1))
-        label = f"SD {summary.noise_value}"
+        label = f"{summary.noise_value}"
         ax.plot(
             epochs,
             summary.test_accuracy_curve,
@@ -97,7 +97,7 @@ def plot_vit_augmentation_groups(saved_models_dir: str | Path = "saved_models"):
     _plot_group(axes[0], sorted(off_summaries, key=lambda item: NOISE_LEVELS.index(item.test_level)), "ViT without training augmentation")
     _plot_group(axes[1], sorted(on_summaries, key=lambda item: NOISE_LEVELS.index(item.test_level)), "ViT with training augmentation")
 
-    fig.suptitle("Vi performance with different standard deviation noise values", fontsize=14)
+    fig.suptitle("ViT performance at different noise SD values", fontsize=14)
     fig.tight_layout()
     plt.show()
 
