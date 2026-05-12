@@ -54,7 +54,7 @@ class DataAugmentation:
         if horizontal_flip:
             named_transforms.append(
                 (
-                    "horizontal_flip",
+                    "Horizontal flip",
                     self._compose_pipeline([v2.RandomHorizontalFlip(p=1.0)], preprocessed_input=preprocessed_input),
                 )
             )
@@ -70,7 +70,7 @@ class DataAugmentation:
         if translation:
             named_transforms.append(
                 (
-                    "translation",
+                    "Translation",
                     self._compose_pipeline(
                         [v2.RandomAffine(degrees=0, translate=(0.1, 0.1))],
                         preprocessed_input=preprocessed_input,
@@ -95,38 +95,11 @@ class DataAugmentation:
             ])
             named_transforms.append(("random_erasing", v2.Compose(erasing_ops)))
 
-        if noise_light:
-            noise_ops = self._preprocessed_ops() if preprocessed_input else self._not_preprocessed_ops()
-            noise_ops.extend([
-                self.toTensor(),
-                v2.GaussianNoise(mean=0.0, sigma=0.05, clip=True),
-                v2.Normalize(mean=[0.449], std=[0.226]),
-            ])
-            named_transforms.append(("noise_light", v2.Compose(noise_ops)))
-
-        if noise_medium:
-            noise_ops = self._preprocessed_ops() if preprocessed_input else self._not_preprocessed_ops()
-            noise_ops.extend([
-                self.toTensor(),
-                v2.GaussianNoise(mean=0.0, sigma=0.10, clip=True),
-                v2.Normalize(mean=[0.449], std=[0.226]),
-            ])
-            named_transforms.append(("noise_medium", v2.Compose(noise_ops)))
-
-        if noise_strong:
-            noise_ops = self._preprocessed_ops() if preprocessed_input else self._not_preprocessed_ops()
-            noise_ops.extend([
-                self.toTensor(),
-                v2.GaussianNoise(mean=0.0, sigma=0.15, clip=True),
-                v2.Normalize(mean=[0.449], std=[0.226]),
-            ])
-            named_transforms.append(("noise_strong", v2.Compose(noise_ops)))
-
         if scale:
             zoom_crop_size = max(1, int(self.img_size * 0.85))
             named_transforms.append(
                 (
-                    "scale_center_zoom",
+                    "Scale Center Zoom",
                     self._compose_pipeline(
                         [
                             v2.CenterCrop(zoom_crop_size),
@@ -136,6 +109,33 @@ class DataAugmentation:
                     ),
                 )
             )
+
+        if noise_light:
+            noise_ops = self._preprocessed_ops() if preprocessed_input else self._not_preprocessed_ops()
+            noise_ops.extend([
+                self.toTensor(),
+                v2.GaussianNoise(mean=0.0, sigma=0.05, clip=True),
+                v2.Normalize(mean=[0.449], std=[0.226]),
+            ])
+            named_transforms.append(("Noise SD=0.05", v2.Compose(noise_ops)))
+
+        if noise_medium:
+            noise_ops = self._preprocessed_ops() if preprocessed_input else self._not_preprocessed_ops()
+            noise_ops.extend([
+                self.toTensor(),
+                v2.GaussianNoise(mean=0.0, sigma=0.10, clip=True),
+                v2.Normalize(mean=[0.449], std=[0.226]),
+            ])
+            named_transforms.append(("Noise SD=0.10", v2.Compose(noise_ops)))
+
+        if noise_strong:
+            noise_ops = self._preprocessed_ops() if preprocessed_input else self._not_preprocessed_ops()
+            noise_ops.extend([
+                self.toTensor(),
+                v2.GaussianNoise(mean=0.0, sigma=0.15, clip=True),
+                v2.Normalize(mean=[0.449], std=[0.226]),
+            ])
+            named_transforms.append(("Noise SD=0.15", v2.Compose(noise_ops)))
 
         return named_transforms
 
@@ -207,7 +207,7 @@ class DataAugmentation:
 
         if include_base:
             base_tensor = self.getBaseTransform(preprocessed_input=preprocessed_input)(image)
-            samples.append(("base", base_tensor))
+            samples.append(("Base", base_tensor))
 
         named_transforms = self._build_named_augmentations(
             horizontal_flip=horizontal_flip,
