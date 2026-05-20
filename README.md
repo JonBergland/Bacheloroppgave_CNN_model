@@ -1,5 +1,5 @@
 ### Bachelorthesis gr82 CNN and ViT
-This is the repository for the models used to compare to the base model in https://github.com/Vetletb/Bacheloroppgave-gr82-feature-extraction.
+This repository is a part of a Bachelorthesis at NTNU done by 3 students. In it are the models used to compare to the base model in https://github.com/Vetletb/Bacheloroppgave-gr82-feature-extraction.
 
 
 #### To run the project
@@ -7,6 +7,29 @@ Run this command to install the neccesary libraries
 ```sh
 pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cu126
 ```
+
+#### To run the project (with virtual environment)
+Create a virtual environment:
+```sh
+python -m venv venv
+```
+
+Activate the virtual environment:
+- On Windows:
+```sh
+venv\Scripts\activate
+```
+- On macOS/Linux:
+```sh
+source venv/bin/activate
+```
+
+Install dependencies:
+```sh
+pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cu126
+```
+
+Then run the project with one of the entry points below
 
 #### Entry Points
 - `main_vit.py` - Vision Transformer experiments
