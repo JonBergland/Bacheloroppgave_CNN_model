@@ -393,62 +393,62 @@ if __name__ == '__main__':
     #     save_dir=save_dir
     # )
 
-    # dropout_rate = 0.2
-    # label_smoothing = 0.25
-    # weight_decay = 0.001
-    # lr_rate = 2e-4
-    # lr_step_size = 9
-    # lr_gamma = 0.7
-    # vit_depth = 6
-    # vit_embed_dim = 192
-    # num_heads = 8
-    # use_val_split = False
+    dropout_rate = 0.2
+    label_smoothing = 0.25
+    weight_decay = 0.001
+    lr_rate = 2e-4
+    lr_step_size = 9
+    lr_gamma = 0.7
+    vit_depth = 6
+    vit_embed_dim = 192
+    num_heads = 8
+    use_val_split = False
 
 
     # Show transformations
-    from data_processing.data_augmentation import DataAugmentation
+    # from data_processing.data_augmentation import DataAugmentation
 
-    aug = DataAugmentation(img_size=64, output_channels=1)
-    aug.showAugmentedSamples(
-    image_path="dataset_preprocessed/boxer/0353.jpg",
-    horizontal_flip=True,
-    vertical_flip=False,
-    translation=True,
-    blur=False,
-    random_erasing=False,
-    noise_light=True,
-    noise_medium=True,
-    noise_strong=True,
-    scale=True,
-    preprocessed_input=True,
-    include_base=True,
-    )
-
-    # main(
-    #     dataset_root=root,
-    #     model_name=model_name,
-    #     epochs=epochs,
-    #     lr_rate=lr_rate,
-    #     batch_size=batch_size,
-    #     img_size=img_size,
-    #     manual_seed=manual_seed,
-    #     save_path=save_path,
-    #     only_see_metrics=only_see_metrics,
-    #     dropout_rate=dropout_rate,
-    #     label_smoothing=label_smoothing,
-    #     weight_decay=weight_decay,
-    #     lr_step_size=lr_step_size,
-    #     lr_gamma=lr_gamma,
-    #     use_kfold=use_kfold,
-    #     n_splits=n_splits,
-    #     test_ratio=test_ratio,
-    #     stratified_kfold=stratified_kfold,
-    #     augment_train_split=augment_train_split,
-    #     augment_test_split=augment_test_split,
-    #     num_workers=num_workers,
-    #     vit_depth=vit_depth,
-    #     vit_embed_dim=vit_embed_dim,
-    #     num_heads=num_heads,
-    #     show_plots=True,
-    #     use_val_split=use_val_split,
+    # aug = DataAugmentation(img_size=64, output_channels=1)
+    # aug.showAugmentedSamples(
+    # image_path="dataset_preprocessed/boxer/0353.jpg",
+    # horizontal_flip=True,
+    # vertical_flip=False,
+    # translation=True,
+    # blur=False,
+    # random_erasing=False,
+    # noise_light=True,
+    # noise_medium=True,
+    # noise_strong=True,
+    # scale=True,
+    # preprocessed_input=True,
+    # include_base=True,
     # )
+
+    main(
+        dataset_root=root,
+        model_name=model_name,
+        epochs=epochs,
+        lr_rate=lr_rate,
+        batch_size=batch_size,
+        img_size=img_size,
+        manual_seed=manual_seed,
+        save_path=save_path,
+        only_see_metrics=only_see_metrics,
+        dropout_rate=dropout_rate,
+        label_smoothing=label_smoothing,
+        weight_decay=weight_decay,
+        lr_step_size=lr_step_size,
+        lr_gamma=lr_gamma,
+        use_kfold=use_kfold,
+        n_splits=n_splits,
+        test_ratio=test_ratio,
+        stratified_kfold=stratified_kfold,
+        augment_train_split=augment_train_split,
+        augment_test_split=augment_test_split,
+        num_workers=num_workers,
+        vit_depth=vit_depth,
+        vit_embed_dim=vit_embed_dim,
+        num_heads=num_heads,
+        show_plots=True,
+        use_val_split=use_val_split,
+    )
