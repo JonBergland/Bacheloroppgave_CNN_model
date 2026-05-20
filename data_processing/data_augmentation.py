@@ -99,7 +99,7 @@ class DataAugmentation:
             zoom_crop_size = max(1, int(self.img_size * 0.85))
             named_transforms.append(
                 (
-                    "Scale Center Zoom",
+                    "Center Crop",
                     self._compose_pipeline(
                         [
                             v2.CenterCrop(zoom_crop_size),
