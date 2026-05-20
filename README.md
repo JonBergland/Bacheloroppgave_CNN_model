@@ -9,7 +9,7 @@ pip install -r requirements.txt --extra-index-url https://download.pytorch.org/w
 ```
 
 #### Entry Points
-- `main_vit.py` - Main entry point for running experiments
+- `main_vit.py` - Vision Transformer experiments
 - `main_resnet.py` - ResNet model experiments
 - `resnet_trainer.py` - ResNet training utilities
 - `vision_transformer_trainer.py` - Vision Transformer training utilities
