@@ -337,6 +337,7 @@ def run_vit_augmentation_matrix(
     return results
 
 if __name__ == '__main__':
+    # # Optuna study
     # study_name = "ViT New New Hyperparameter Study"
     # storage_name = "sqlite:///{}.db".format(study_name)
     # directions = [StudyDirection.MAXIMIZE]
@@ -387,10 +388,10 @@ if __name__ == '__main__':
     augment_test_split = True
     num_workers = 1
 
-    run_vit_augmentation_matrix(
-        dataset_root=root,
-        save_dir=save_dir
-    )
+    # run_vit_augmentation_matrix(
+    #     dataset_root=root,
+    #     save_dir=save_dir
+    # )
 
     # dropout_rate = 0.2
     # label_smoothing = 0.25
@@ -404,24 +405,24 @@ if __name__ == '__main__':
     # use_val_split = False
 
 
-    # # # # Show transformations
-    # # from data_processing.data_augmentation import DataAugmentation
+    # Show transformations
+    from data_processing.data_augmentation import DataAugmentation
 
-    # # aug = DataAugmentation(img_size=64, output_channels=1)
-    # # aug.showAugmentedSamples(
-    # # image_path="dataset_preprocessed/banana/0000.jpg",
-    # # horizontal_flip=True,
-    # # vertical_flip=False,
-    # # translation=True,
-    # # blur=False,
-    # # random_erasing=False,
-    # # noise_light=True,
-    # # noise_medium=True,
-    # # noise_strong=True,
-    # # scale=True,
-    # # preprocessed_input=True,
-    # # include_base=True,
-    # # )
+    aug = DataAugmentation(img_size=64, output_channels=1)
+    aug.showAugmentedSamples(
+    image_path="dataset_preprocessed/boxer/0353.jpg",
+    horizontal_flip=True,
+    vertical_flip=False,
+    translation=True,
+    blur=False,
+    random_erasing=False,
+    noise_light=True,
+    noise_medium=True,
+    noise_strong=True,
+    scale=True,
+    preprocessed_input=True,
+    include_base=True,
+    )
 
     # main(
     #     dataset_root=root,
