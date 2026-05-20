@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from statistics import mean
 
 import matplotlib.pyplot as plt
 import torch
@@ -111,8 +112,13 @@ def print_summary_table(saved_models_dir: str | Path = "saved_models"):
         )
 
 
+def _average_last_epochs(values: list[float], window_size: int = 5) -> tuple[float, int]:
+    window = values[-window_size:]
+    return mean(window), len(values)
+
+
 def get_max_accuracy_table(saved_models_dir: str | Path = "saved_models") -> str:
-    """Generate a formatted table of maximum accuracy scores for all ViT runs."""
+    """Generate a formatted table of trailing 5-epoch average accuracy scores for all ViT runs."""
     summaries = load_vit_summaries(saved_models_dir)
     
     if not summaries:
@@ -129,37 +135,35 @@ def get_max_accuracy_table(saved_models_dir: str | Path = "saved_models") -> str
     )
 
     lines = []
-    lines.append("ViT Maximum Test Accuracy Scores")
+    lines.append("ViT Last 5 Epoch Average Test Accuracy Scores")
     lines.append("=" * 60)
     lines.append("\nWithout Training Augmentation:")
     lines.append("-" * 60)
-    lines.append(f"{'Noise Level':<15} {'Max Accuracy (%)':<20} {'Epoch':<10}")
+    lines.append(f"{'Noise Level':<15} {'Last 5 Epoch Avg (%)':<20} {'Final Epoch':<12}")
     lines.append("-" * 60)
 
     for summary in off_summaries:
         if summary.test_accuracy_curve:
-            max_acc = max(summary.test_accuracy_curve)
-            max_epoch = summary.test_accuracy_curve.index(max_acc) + 1
+            avg_acc, final_epoch = _average_last_epochs(summary.test_accuracy_curve)
             noise_label = summary.test_level.replace("none", "No Noise").title()
-            lines.append(f"{noise_label:<15} {max_acc:<20.2f} {max_epoch:<10}")
+            lines.append(f"{noise_label:<15} {avg_acc:<20.2f} {final_epoch:<12}")
 
     lines.append("\nWith Training Augmentation:")
     lines.append("-" * 60)
-    lines.append(f"{'Noise Level':<15} {'Max Accuracy (%)':<20} {'Epoch':<10}")
+    lines.append(f"{'Noise Level':<15} {'Last 5 Epoch Avg (%)':<20} {'Final Epoch':<12}")
     lines.append("-" * 60)
 
     for summary in on_summaries:
         if summary.test_accuracy_curve:
-            max_acc = max(summary.test_accuracy_curve)
-            max_epoch = summary.test_accuracy_curve.index(max_acc) + 1
+            avg_acc, final_epoch = _average_last_epochs(summary.test_accuracy_curve)
             noise_label = summary.test_level.replace("none", "No Noise").title()
-            lines.append(f"{noise_label:<15} {max_acc:<20.2f} {max_epoch:<10}")
+            lines.append(f"{noise_label:<15} {avg_acc:<20.2f} {final_epoch:<12}")
 
     return "\n".join(lines)
 
 
 def get_max_accuracy_csv(saved_models_dir: str | Path = "saved_models") -> str:
-    """Generate a CSV table of maximum accuracy scores for all ViT runs."""
+    """Generate a CSV table of trailing 5-epoch average accuracy scores for all ViT runs."""
     summaries = load_vit_summaries(saved_models_dir)
     
     if not summaries:
@@ -167,14 +171,13 @@ def get_max_accuracy_csv(saved_models_dir: str | Path = "saved_models") -> str:
 
     summaries = sorted(summaries, key=lambda x: (x.train_aug, NOISE_LEVELS.index(x.test_level)))
 
-    lines = ["Model,Training Augmentation,Noise Level,Max Accuracy (%),Epoch"]
+    lines = ["Model,Training Augmentation,Noise Level,Last 5 Epoch Avg (%),Final Epoch"]
     
     for summary in summaries:
         if summary.test_accuracy_curve:
-            max_acc = max(summary.test_accuracy_curve)
-            max_epoch = summary.test_accuracy_curve.index(max_acc) + 1
+            avg_acc, final_epoch = _average_last_epochs(summary.test_accuracy_curve)
             train_aug_str = "Yes" if summary.train_aug else "No"
-            lines.append(f"ViT,{train_aug_str},{summary.test_level},{max_acc:.2f},{max_epoch}")
+            lines.append(f"ViT,{train_aug_str},{summary.test_level},{avg_acc:.2f},{final_epoch}")
 
     return "\n".join(lines)
 
